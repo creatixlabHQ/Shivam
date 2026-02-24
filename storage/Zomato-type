@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sweet india family restaurant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .food-card { animation: slideIn 0.4s ease-out forwards; }
+        .success-bg { background: rgba(36, 150, 63, 0.98); }
+        .page { display: none; }
+        .active-page { display: block; animation: slideIn 0.3s ease-out; }
+        .bottom-popup { transform: translateY(100%); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bottom-popup.show { transform: translateY(0); }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <nav class="bg-white px-4 md:px-8 py-4 flex flex-col md:flex-row gap-4 justify-between items-center sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center justify-between w-full md:w-auto gap-8">
+            <div class="text-3xl font-black italic text-[#ef4f5f] tracking-tighter cursor-pointer" onclick="goToPage('menu-page')">Sweet india</div>
+            <div class="w-10 h-10 bg-gray-100 rounded-full flex md:hidden items-center justify-center">
+                <i class="fa fa-user text-[red]"></i>
+            </div>
+        </div>
+
+        <div id="search-container" class="w-full max-w-2xl relative">
+            <i class="fa fa-search absolute left-4 top-3.5 text-gray-400"></i>
+            <input type="text" id="searchInput" placeholder="Search for pizza, biryani, burgers..." 
+                   class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#ef4f5f] focus:bg-white transition-all shadow-sm">
+        </div>
+
+        <div class="hidden md:flex items-center space-x-6 text-gray-600 font-medium">
+            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer">
+                <i class="fa fa-user text-gray-500"></i>
+            </div>
+        </div>
+    </nav>
+
+    <main id="menu-page" class="page active-page max-w-5xl mx-auto p-4 md:p-8">
+        <div class="mb-8">
+            <h2 class="text-2xl font-extrabold text-gray-800">Inspiration for your first order</h2>
+            <p class="text-gray-500 text-sm">Best food in Basti, delivered fast!</p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="menu-grid">
+            </div>
+    </main>
+
+    <main id="cart-page" class="page max-w-2xl mx-auto p-4 md:p-8 pb-32">
+        <div class="flex items-center gap-4 mb-8">
+            <button onclick="goToPage('menu-page')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600 hover:text-[#ef4f5f]">
+                <i class="fa fa-arrow-left"></i>
+            </button>
+            <h2 class="text-2xl font-black text-gray-800">Final Checkout</h2>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                <i class="fa fa-shopping-cart text-[#ef4f5f]"></i> Your Basket
+            </h3>
+            <div id="cart-list" class="space-y-4 mb-6"></div>
+            
+            <div class="border-t border-dashed pt-4 space-y-3">
+                <div class="flex justify-between text-gray-500 text-sm">
+                    <span>Item Total</span>
+                    <span id="sub-total">₹0</span>
+                </div>
+                <div class="flex justify-between text-gray-500 text-sm">
+                    <span>Delivery & Taxes</span>
+                    <span>₹45.00</span>
+                </div>
+                <div class="flex justify-between text-xl font-black pt-2 border-t">
+                    <span>To Pay</span>
+                    <span id="total-price" class="text-[#ef4f5f]">₹0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-50">
+            <h3 class="font-bold text-lg mb-5 flex items-center gap-2">
+                <i class="fa fa-map-marker-alt text-[#ef4f5f]"></i> Delivery Details
+            </h3>
+            <div class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="custName" placeholder="Full Name" class="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#ef4f5f]">
+                    <input type="number" id="custPhone" placeholder="Mobile Number" class="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#ef4f5f]">
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Manual Address (Flat/House No.)</label>
+                    <textarea id="manualAddress" placeholder="Enter landmark and area..." class="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#ef4f5f] h-24"></textarea>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1 ml-1">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Live GPS Location</label>
+                        <span class="text-green-600 text-[9px] font-black uppercase"><i class="fa fa-lock"></i> Secured</span>
+                    </div>
+                    <input type="text" id="autoAddress" readonly value="📍 Pinpointing location..." class="w-full p-4 bg-gray-100 border rounded-2xl text-gray-500 italic text-sm cursor-not-allowed">
+                </div>
+            </div>
+            <button onclick="placeOrder()" class="w-full mt-8 bg-[#ef4f5f] text-white py-5 rounded-2xl font-black text-lg shadow-lg shadow-red-200 active:scale-95 transition-all">
+                PLACE ORDER <i class="fa fa-check-circle ml-2"></i>
+            </button>
+        </div>
+    </main>
+
+    <div id="bottom-bar" class="bottom-popup fixed bottom-0 left-0 right-0 bg-white shadow-[0_-15px_40px_rgba(0,0,0,0.12)] p-5 flex justify-between items-center z-[60] md:max-w-lg md:mx-auto md:mb-4 md:rounded-3xl border border-gray-100">
+        <div class="flex items-center gap-4">
+            <div class="bg-green-100 w-12 h-12 rounded-2xl flex items-center justify-center">
+                <i class="fa fa-shopping-bag text-green-600 text-xl"></i>
+            </div>
+            <div>
+                <p id="item-info" class="font-black text-gray-800">1 Item Added</p>
+                <p class="text-xs text-green-600 font-bold">Safe delivery guaranteed</p>
+            </div>
+        </div>
+        <button onclick="goToPage('cart-page')" class="bg-[#ef4f5f] text-white px-10 py-4 rounded-2xl font-black flex items-center gap-3 shadow-lg shadow-red-100 hover:bg-[#d93f4e]">
+            NEXT <i class="fa fa-chevron-right text-xs"></i>
+        </button>
+    </div>
+
+    <div id="success-overlay" class="fixed inset-0 hidden z-[100] items-center justify-center p-6">
+        <div class="success-bg absolute inset-0"></div>
+        <div class="relative z-10 bg-white p-10 rounded-[40px] text-center shadow-2xl max-w-sm w-full animate-bounce">
+            <div class="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa fa-check text-5xl"></i>
+            </div>
+            <h2 class="text-3xl font-black text-gray-800 mb-2 tracking-tight">Confirmed!</h2>
+            <p class="text-gray-500 mb-8 px-4">Bhai taiyar ho jao, garma garam khana nikal chuka hai!</p>
+            <button onclick="location.reload()" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-lg">TRACK RIDE</button>
+        </div>
+    </div>
+
+    <script>
+        const foodData = [
+            { id: 1, name: "Double Cheese Margherita", price: 349, rating: 4.5, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600", desc: "Extra cheese, extra happiness." },
+            { id: 2, name: "Chicken Dum Biryani", price: 450, rating: 4.9, img: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600", desc: "Classic Hyderabadi style." },
+            { id: 3, name: "Classic Cold Coffee", price: 120, rating: 4.2, img: "https://images.unsplash.com/photo-1559496417-e7f25cb247f3?w=600", desc: "Thandi thandi coffee." },
+            { id: 4, name: "Paneer Tikka Masala", price: 280, rating: 4.4, img: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600", desc: "Spicy and creamy paneer." },
+            { id: 5, name: "Veg Hakka Noodles", price: 199, rating: 4.0, img: "https://images.unsplash.com/photo                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Manual Address (Flat/House No.)</label>
+                    <textarea id="manualAddress" placeholder="Enter landmark and area..." class="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#ef4f5f] h-24"></textarea>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1 ml-1">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Live GPS Location</label>
+                        <span class="text-green-600 text-[9px] font-black uppercase"><i class="fa fa-lock"></i> Secured</span>
+                    </div>
+                    <input type="text" id="autoAddress" readonly value="📍 Pinpointing location..." class="w-full p-4 bg-gray-100 border rounded-2xl text-gray-500 italic text-sm cursor-not-allowed">
+                </div>
+            </div>
+            <button onclick="placeOrder()" class="w-full mt-8 bg-[#ef4f5f] text-white py-5 rounded-2xl font-black text-lg shadow-lg shadow-red-200 active:scale-95 transition-all">
+                PLACE ORDER <i class="fa fa-check-circle ml-2"></i>
+            </button>
+        </div>
+    </main>
+
+    <div id="bottom-bar" class="bottom-popup fixed bottom-0 left-0 right-0 bg-white shadow-[0_-15px_40px_rgba(0,0,0,0.12)] p-5 flex justify-between items-center z-[60] md:max-w-lg md:mx-auto md:mb-4 md:rounded-3xl border border-gray-100">
+        <div class="flex items-center gap-4">
+            <div class="bg-green-100 w-12 h-12 rounded-2xl flex items-center justify-center">
+                <i class="fa fa-shopping-bag text-green-600 text-xl"></i>
+            </div>
+            <div>
+                <p id="item-info" class="font-black text-gray-800">1 Item Added</p>
+                <p class="text-xs text-green-600 font-bold">Safe delivery guaranteed</p>
+            </div>
+        </div>
+        <button onclick="goToPage('cart-page')" class="bg-[#ef4f5f] text-white px-10 py-4 rounded-2xl font-black flex items-center gap-3 shadow-lg shadow-red-100 hover:bg-[#d93f4e]">
+            NEXT <i class="fa fa-chevron-right text-xs"></i>
+        </button>
+    </div>
+
+    <div id="success-overlay" class="fixed inset-0 hidden z-[100] items-center justify-center p-6">
+        <div class="success-bg absolute inset-0"></div>
+        <div class="relative z-10 bg-white p-10 rounded-[40px] text-center shadow-2xl max-w-sm w-full animate-bounce">
+            <div class="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa fa-check text-5xl"></i>
+            </div>
+            <h2 class="text-3xl font-black text-gray-800 mb-2 tracking-tight">Confirmed!</h2>
+            <p class="text-gray-500 mb-8 px-4">Bhai taiyar ho jao, garma garam khana nikal chuka hai!</p>
+            <button onclick="location.reload()" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-lg">TRACK RIDE</button>
+        </div>
+    </div>
+
+    <script>
+        const foodData = [
+            { id: 1, name: "Double Cheese Margherita", price: 349, rating: 4.5, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600", desc: "Extra cheese, extra happiness." },
+            { id: 2, name: "Chicken Dum Biryani", price: 450, rating: 4.9, img: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600", desc: "Classic Hyderabadi style." },
+            { id: 3, name: "Classic Cold Coffee", price: 120, rating: 4.2, img: "https://images.unsplash.com/photo-1559496417-e7f25cb247f3?w=600", desc: "Thandi thandi coffee." },
+            { id: 4, name: "Paneer Tikka Masala", price: 280, rating: 4.4, img: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600", desc: "Spicy and creamy paneer." },
+            { id: 5, name: "Veg Hakka Noodles", price: 199, rating: 4.0, img: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=600", desc: "Street style noodles." },
+            { id: 6, name: "Chocolate Brownie", price: 150, rating: 4.7, img: "https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=600", desc: "Fudgy brownie with nuts." }
+        ];
+
+        let cart = [];
+        let currentPage = 'menu-page';
+
+        function renderMenu(items = foodData) {
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = items.map(f => {
+                const cartItem = cart.find(c => c.id === f.id);
+                
+                // COMPACT COUNTER
+                const btnContent = cartItem 
+                    ? `<div class="flex items-center justify-between w-24 bg-[#ef4f5f] text-white px-3 py-1.5 rounded-xl font-bold shadow-md">
+                        <button onclick="changeQty(${f.id}, -1)" class="hover:scale-110">-</button>
+                        <span class="text-sm">${cartItem.qty}</span>
+                        <button onclick="changeQty(${f.id}, 1)" class="hover:scale-110">+</button>
+                       </div>`
+                    : `<button onclick="addToCart(${f.id})" class="w-20 border-2 border-[#ef4f5f] text-[#ef4f5f] px-4 py-1.5 rounded-xl font-black text-xs hover:bg-[#ef4f5f] hover:text-white transition-all uppercase tracking-tighter">ADD</button>`;
+
+                return `
+                <div class="food-card bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all p-4 flex gap-5 items-center">
+                    <div class="relative flex-shrink-0">
+                        <img src="${f.img}" class="w-32 h-32 md:w-36 md:h-36 object-cover rounded-[1.5rem] shadow-md">
+                        <div class="absolute -top-2 -left-2 bg-green-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-sm">
+                            ${f.rating} <i class="fa fa-star text-[8px]"></i>
+                        </div>
+                    <div class="absolute -top-2 -right-2 bg-[#ef4f5f] text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-sm z-10">
+
+        10% OFF
+
+    </div>
+
+</div>
+
+                    <div class="flex-1">
+                        <h3 class="font-black text-gray-800 text-lg leading-tight mb-1">${f.name}</h3>
+                        <p class="text-gray-400 text-xs mb-3 line-clamp-1">${f.desc}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-black text-[#ef4f5f]">₹${f.price}</span>
+                            <div id="btn-container-${f.id}">${btnContent}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            
+            if(items.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-20 text-gray-400 italic">No matches found... Try searching something else!</div>`;
+            }
+            updateBottomBar();
+        }
+
+        function addToCart(id) {
+            const product = foodData.find(p => p.id === id);
+            cart.push({...product, qty: 1});
+            renderMenu();
+        }
+
+        function changeQty(id, change) {
+            const index = cart.findIndex(item => item.id === id);
+            if(index !== -1) {
+                cart[index].qty += change;
+                if(cart[index].qty <= 0) cart.splice(index, 1);
+                renderMenu();
+                if(currentPage === 'cart-page') updateCartUI();
+            }
+        }
+
+        function goToPage(pageId) {
+            currentPage = pageId;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(pageId).classList.add('active-page');
+            
+            // Search bar handle
+            document.getElementById('search-container').style.display = (pageId === 'cart-page') ? 'none' : 'block';
+
+            if(pageId === 'cart-page') {
+                updateCartUI();
+                detectLocation();
+            }
+            updateBottomBar();
+            window.scrollTo(0,0);
+        }
+
+        function updateBottomBar() {
+            const bar = document.getElementById('bottom-bar');
+            const info = document.getElementById('item-info');
+            if(cart.length > 0 && currentPage === 'menu-page') {
+                bar.classList.add('show');
+                const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+                info.innerText = `${totalItems} Item${totalItems > 1 ? 's' : ''} Added`;
+            } else {
+                bar.classList.remove('show');
+            }
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cart-list');
+            const totalEl = document.getElementById('total-price');
+            const subTotalEl = document.getElementById('sub-total');
+            let grandTotal = 0;
+
+            if(cart.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-gray-400">Your basket is empty!</div>`;
+                totalEl.innerText = "₹0";
+                subTotalEl.innerText = "₹0";
+                return;
+            }
+
+            list.innerHTML = cart.map(item => {
+                grandTotal += (item.price * item.qty);
+                return `
+                <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <div>
+                        <p class="font-black text-gray-800 text-sm">${item.name}</p>
+                        <p class="text-[#ef4f5f] text-xs font-bold">₹${item.price}</p>
+                    </div>
+                    <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-3 py-1 shadow-sm">
+                        <button onclick="changeQty(${item.id}, -1)" class="text-[#ef4f5f] font-black text-lg">-</button>
+                        <span class="text-sm font-black w-4 text-center">${item.qty}</span>
+                        <button onclick="changeQty(${item.id}, 1)" class="text-[#ef4f5f] font-black text-lg">+</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            subTotalEl.innerText = `₹${grandTotal}`;
+            totalEl.innerText = `₹${grandTotal + 45}`;
+        }
+
+        function detectLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    document.getElementById('autoAddress').value = `GPS Locked: ${latitude.toFixed(4)}N, ${longitude.toFixed(4)}E (Basti Area)`;
+                }, () => {
+                    document.getElementById('autoAddress').value = "GPS Access Denied. (Manual Required)";
+                });
+            }
+        }
+
+        function placeOrder() {
+            const name = document.getElementById('custName').value;
+            const phone = document.getElementById('custPhone').value;
+            if(!name || !phone || cart.length === 0) {
+                alert("Bhai, Details aur Food dono zaroori hain!");
+                return;
+            }
+            const overlay = document.getElementById('success-overlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const filtered = foodData.filter(item => item.name.toLowerCase().includes(val));
+            renderMenu(filtered);
+        });
+
+        renderMenu();
+    </script>
+</body>
+</html>
