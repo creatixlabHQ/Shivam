@@ -1,1 +1,2745 @@
-hrllo
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<title>CanvasPro Mobile - Fixed</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f13;--panel:#1a1a22;--panel2:#22222e;--border:#2e2e3e;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8d8;
+  --text:#e8e8f0;--text2:#9090a8;--hover:#2a2a38;--active:#6c63ff28;
+  --radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px);
+  --topbar:52px;--bottombar:68px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text)}
+
+/* ===== TOP BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:100;
+}
+#app-title{font-size:16px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.top-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.top-btn:active{background:var(--hover);transform:scale(.92)}
+.top-btn.accent{background:var(--accent);color:#fff;font-size:14px;width:auto;padding:0 14px;font-weight:600}
+
+/* ===== CANVAS AREA - FIXED ===== */
+#canvas-container{
+  position:fixed;top:var(--topbar);left:0;right:0;
+  bottom:var(--bottombar);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a1a28 0%,#0f0f13 100%);
+  touch-action:none;
+}
+#canvas-wrapper{
+  position:relative;
+  border-radius:4px;
+  box-shadow:0 0 0 1px var(--border),0 8px 40px rgba(0,0,0,.7);
+}
+#canvas-wrapper canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  border-radius:4px;
+}
+/* FIX: overlay should capture touches */
+#canvas-overlay{
+  pointer-events: auto !important;
+  z-index: 20;
+  cursor: crosshair;
+}
+#selection-box{
+  position:absolute;
+  border:2px dashed var(--accent);
+  background:rgba(108,99,255,.08);
+  pointer-events:none;
+  display:none;
+  z-index:25;
+  border-radius:2px;
+}
+#text-input-container{position:absolute;display:none;z-index:50}
+#text-input{background:rgba(0,0,0,.2);border:2px dashed var(--accent);outline:none;color:#fff;font-size:20px;min-width:80px;min-height:30px;padding:4px;border-radius:4px;white-space:pre;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ===== BOTTOM TOOL BAR ===== */
+#bottombar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--bottombar) + var(--safe-bottom));
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;padding-bottom:var(--safe-bottom);
+  gap:2px;z-index:100;overflow-x:auto;overflow-y:hidden;
+}
+#bottombar::-webkit-scrollbar{display:none}
+.tool-btn{
+  min-width:52px;height:52px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);font-size:20px;transition:all .15s;
+  border:1.5px solid transparent;flex-shrink:0;gap:2px;
+}
+.tool-btn span{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.tool-btn:active{transform:scale(.88)}
+.tool-btn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+.tool-btn.active span{color:var(--accent)}
+.tool-sep-v{width:1px;height:36px;background:var(--border);margin:0 3px;flex-shrink:0}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+#fab-row{
+  position:fixed;right:14px;bottom:calc(var(--bottombar) + 14px);
+  display:flex;flex-direction:column;gap:10px;z-index:90;
+}
+.fab{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);border:none;
+}
+.fab:active{transform:scale(.88)}
+#fab-undo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-redo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-color{background:var(--accent);color:#fff;width:52px;height:52px}
+
+/* ===== SLIDE-UP PANELS ===== */
+.panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:none;opacity:0;transition:opacity .25s;
+}
+.panel-overlay.show{display:block;opacity:1}
+.slide-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:201;
+  background:var(--panel);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.slide-panel.show{transform:translateY(0)}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 4px}
+.panel-header{padding:8px 20px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:16px;font-weight:600}
+.panel-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.panel-body{padding:0 16px 16px}
+
+/* Color panel */
+#color-grid-mob{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:14px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch:active{transform:scale(.85)}
+.color-swatch.active{border-color:#fff}
+.cur-colors-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#fg-color,#bg-color{width:44px;height:44px;border-radius:10px;border:2px solid var(--border);cursor:pointer}
+.swap-btn{padding:8px 14px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.swap-btn:active{background:var(--hover)}
+#custom-color-mob{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px}
+
+/* Brush panel sliders */
+.slider-group{margin-bottom:16px}
+.slider-group label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-group label span{color:var(--accent);font-weight:600}
+.slider-group input[type=range]{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:var(--border);outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--panel)}
+
+/* Grid buttons */
+.grid-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.gbtn{padding:12px 6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+.gbtn:active{transform:scale(.92)}
+.gbtn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+
+/* Select boxes */
+select.mob-select{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:'Outfit',sans-serif}
+
+/* Layers */
+.layer-mob{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.layer-mob.active{border-color:var(--accent);background:var(--active)}
+.layer-mob-thumb{width:36px;height:28px;border-radius:5px;background:repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/8px 8px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-mob-thumb canvas{width:100%;height:100%}
+.layer-mob-name{flex:1;font-size:13px}
+.layer-mob-vis{font-size:18px;cursor:pointer;padding:4px}
+.layer-mob-del{font-size:16px;color:var(--accent2);cursor:pointer;padding:4px}
+.layer-actions-mob{display:flex;gap:8px;margin-top:10px}
+.layer-action-mob{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center}
+.layer-action-mob:active{background:var(--hover)}
+
+/* Filters grid */
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.filter-mob-btn{padding:12px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;display:flex;align-items:center;gap:8px}
+.filter-mob-btn:active{background:var(--hover);transform:scale(.96)}
+
+/* Zoom indicator */
+#zoom-badge{
+  position:fixed;left:14px;bottom:calc(var(--bottombar) + 14px);
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);
+  z-index:90;font-weight:600;
+}
+
+/* More menu */
+.more-menu{
+  position:fixed;bottom:calc(var(--bottombar)+8px);right:72px;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:6px;z-index:300;display:none;min-width:180px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.more-menu.show{display:block}
+.more-item{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.more-item:active{background:var(--hover);color:var(--text)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%}
+.modal-sheet h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-row label{font-size:13px;color:var(--text2);width:80px}
+.modal-row input,.modal-row select{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;border:none;font-family:'Outfit',sans-serif;text-align:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--topbar)+12px);left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 18px;font-size:13px;color:var(--text);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* Pinch hint */
+#pinch-hint{position:fixed;bottom:calc(var(--bottombar)+80px);left:50%;transform:translateX(-50%);background:rgba(108,99,255,.85);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:89;opacity:0;transition:opacity .5s;pointer-events:none}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div id="app-title">CanvasPro</div>
+  <div class="top-btn" onclick="showPanel('layers-panel')" title="Layers">🗂️</div>
+  <div class="top-btn" onclick="showPanel('filters-panel')" title="Filters">✨</div>
+  <div class="top-btn" onclick="toggleMoreMenu()" id="more-btn">⋯</div>
+  <div class="top-btn accent" onclick="exportImage()">Save</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container">
+  <div id="canvas-wrapper">
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-main"></canvas>
+    <canvas id="canvas-overlay"></canvas>
+    <div id="text-input-container"><div id="text-input" contenteditable="true" spellcheck="false"></div></div>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<!-- FABs -->
+<div id="fab-row">
+  <div class="fab" id="fab-redo" onclick="redoAction()">↪</div>
+  <div class="fab" id="fab-undo" onclick="undoAction()">↩</div>
+  <div class="fab" id="fab-color" onclick="showPanel('color-panel')">🎨</div>
+</div>
+
+<!-- Zoom Badge -->
+<div id="zoom-badge">100%</div>
+
+<!-- Bottom Toolbar -->
+<div id="bottombar">
+  <div class="tool-btn active" id="t-pen" onclick="setTool('pen')">✏️<span>Pen</span></div>
+  <div class="tool-btn" id="t-brush" onclick="setTool('brush')">🖌️<span>Brush</span></div>
+  <div class="tool-btn" id="t-eraser" onclick="setTool('eraser')">🧹<span>Erase</span></div>
+  <div class="tool-btn" id="t-fill" onclick="setTool('fill')">🪣<span>Fill</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-line" onclick="setTool('line')">╱<span>Line</span></div>
+  <div class="tool-btn" id="t-rect" onclick="setTool('rect')">⬜<span>Rect</span></div>
+  <div class="tool-btn" id="t-ellipse" onclick="setTool('ellipse')">⭕<span>Oval</span></div>
+  <div class="tool-btn" id="t-triangle" onclick="setTool('triangle')">△<span>Tri</span></div>
+  <div class="tool-btn" id="t-arrow" onclick="setTool('arrow')">→<span>Arrow</span></div>
+  <div class="tool-btn" id="t-star" onclick="setTool('star')">⭐<span>Star</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-text" onclick="setTool('text')">T<span>Text</span></div>
+  <div class="tool-btn" id="t-eyedrop" onclick="setTool('eyedrop')">💉<span>Pick</span></div>
+  <div class="tool-btn" id="t-select" onclick="setTool('select')">⬚<span>Select</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" onclick="showPanel('brush-panel')">⚙️<span>Options</span></div>
+</div>
+
+<!-- More Menu -->
+<div class="more-menu" id="more-menu">
+  <div class="more-item" onclick="showNew();closeMoreMenu()">📄 New Canvas</div>
+  <div class="more-item" onclick="openFile();closeMoreMenu()">📂 Open Image</div>
+  <div class="more-item" onclick="selectAll();closeMoreMenu()">⬜ Select All</div>
+  <div class="more-item" onclick="clearCanvas();closeMoreMenu()">🗑️ Clear Layer</div>
+  <div class="more-item" onclick="flipH();closeMoreMenu()">↔️ Flip H</div>
+  <div class="more-item" onclick="flipV();closeMoreMenu()">↕️ Flip V</div>
+  <div class="more-item" onclick="rotateCanvas();closeMoreMenu()">🔄 Rotate 90°</div>
+</div>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+<!-- COLOR PANEL -->
+<div class="slide-panel" id="color-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🎨 Colors</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="cur-colors-row">
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Foreground</div>
+        <div id="fg-color" onclick="document.getElementById('fg-picker').click()"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Background</div>
+        <div id="bg-color" onclick="document.getElementById('bg-picker').click()"></div>
+      </div>
+      <div class="swap-btn" onclick="swapColors()">⇆ Swap</div>
+    </div>
+    <input type="color" id="fg-picker" style="display:none" oninput="setFgColor(this.value)">
+    <input type="color" id="bg-picker" style="display:none" oninput="setBgColor(this.value)">
+    <div id="color-grid-mob"></div>
+    <input type="color" id="custom-color-mob" title="Custom" oninput="setFgColor(this.value)">
+  </div>
+</div>
+
+<!-- BRUSH PANEL -->
+<div class="slide-panel" id="brush-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>⚙️ Brush & Shape Options</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="slider-group">
+      <label>Size <span id="bsv">5</span>px</label>
+      <input type="range" id="brush-size" min="1" max="100" value="5" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Opacity <span id="bov">100</span>%</label>
+      <input type="range" id="brush-opacity" min="1" max="100" value="100" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Hardness <span id="bhv">80</span>%</label>
+      <input type="range" id="brush-hardness" min="0" max="100" value="80" oninput="updateBrush()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Blend Mode</div>
+    <select id="blend-mode" class="mob-select" onchange="updateBlend()">
+      <option value="source-over">Normal</option><option value="multiply">Multiply</option>
+      <option value="screen">Screen</option><option value="overlay">Overlay</option>
+      <option value="darken">Darken</option><option value="lighten">Lighten</option>
+      <option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+      <option value="difference">Difference</option><option value="exclusion">Exclusion</option>
+    </select>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Shape Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="shape-stroke" onclick="setShapeStyle('stroke')">⬡ Stroke</div>
+      <div class="gbtn" id="shape-fill" onclick="setShapeStyle('fill')">⬢ Fill</div>
+      <div class="gbtn" id="shape-both" onclick="setShapeStyle('both')">◼ Both</div>
+    </div>
+    <div class="slider-group">
+      <label>Stroke W <span id="swv">2</span>px</label>
+      <input type="range" id="stroke-width" min="1" max="30" value="2" oninput="updateStroke()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Line Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="ls-solid" onclick="setLineDash('solid')">— Solid</div>
+      <div class="gbtn" id="ls-dashed" onclick="setLineDash('dashed')">- - Dash</div>
+      <div class="gbtn" id="ls-dotted" onclick="setLineDash('dotted')">··· Dot</div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Text Settings</div>
+    <div class="slider-group">
+      <label>Font Size <span id="fsv">20</span>px</label>
+      <input type="range" id="font-size-slider" min="8" max="120" value="20" oninput="updateTextStyle()">
+    </div>
+    <select id="font-family" class="mob-select" onchange="updateTextStyle()">
+      <option>Arial</option><option>Georgia</option><option>Courier New</option>
+      <option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+      <option>Comic Sans MS</option><option selected>Outfit</option>
+    </select>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn" id="txt-bold" onclick="toggleTextBold()" style="font-weight:700">B Bold</div>
+      <div class="gbtn" id="txt-italic" onclick="toggleTextItalic()" style="font-style:italic">I Italic</div>
+      <div class="gbtn" id="txt-under" onclick="toggleTextUnder()" style="text-decoration:underline">U Under</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERS PANEL -->
+<div class="slide-panel" id="layers-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🗂️ Layers</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div id="layers-list-mob"></div>
+    <div class="layer-actions-mob">
+      <div class="layer-action-mob" onclick="addLayer()">+ Add</div>
+      <div class="layer-action-mob" onclick="duplicateLayer()">⧉ Dup</div>
+      <div class="layer-action-mob" onclick="mergeDown()">↓ Merge</div>
+      <div class="layer-action-mob" onclick="deleteLayer()">✕ Del</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div class="slide-panel" id="filters-panel">
+  <div class="panel-handl<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<title>CanvasPro Mobile - Fixed</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f13;--panel:#1a1a22;--panel2:#22222e;--border:#2e2e3e;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8d8;
+  --text:#e8e8f0;--text2:#9090a8;--hover:#2a2a38;--active:#6c63ff28;
+  --radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px);
+  --topbar:52px;--bottombar:68px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text)}
+
+/* ===== TOP BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:100;
+}
+#app-title{font-size:16px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.top-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.top-btn:active{background:var(--hover);transform:scale(.92)}
+.top-btn.accent{background:var(--accent);color:#fff;font-size:14px;width:auto;padding:0 14px;font-weight:600}
+
+/* ===== CANVAS AREA - FIXED ===== */
+#canvas-container{
+  position:fixed;top:var(--topbar);left:0;right:0;
+  bottom:var(--bottombar);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a1a28 0%,#0f0f13 100%);
+  touch-action:none;
+}
+#canvas-wrapper{
+  position:relative;
+  border-radius:4px;
+  box-shadow:0 0 0 1px var(--border),0 8px 40px rgba(0,0,0,.7);
+}
+#canvas-wrapper canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  border-radius:4px;
+}
+/* FIX: overlay should capture touches */
+#canvas-overlay{
+  pointer-events: auto !important;
+  z-index: 20;
+  cursor: crosshair;
+}
+#selection-box{
+  position:absolute;
+  border:2px dashed var(--accent);
+  background:rgba(108,99,255,.08);
+  pointer-events:none;
+  display:none;
+  z-index:25;
+  border-radius:2px;
+}
+#text-input-container{position:absolute;display:none;z-index:50}
+#text-input{background:rgba(0,0,0,.2);border:2px dashed var(--accent);outline:none;color:#fff;font-size:20px;min-width:80px;min-height:30px;padding:4px;border-radius:4px;white-space:pre;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ===== BOTTOM TOOL BAR ===== */
+#bottombar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--bottombar) + var(--safe-bottom));
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;padding-bottom:var(--safe-bottom);
+  gap:2px;z-index:100;overflow-x:auto;overflow-y:hidden;
+}
+#bottombar::-webkit-scrollbar{display:none}
+.tool-btn{
+  min-width:52px;height:52px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);font-size:20px;transition:all .15s;
+  border:1.5px solid transparent;flex-shrink:0;gap:2px;
+}
+.tool-btn span{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.tool-btn:active{transform:scale(.88)}
+.tool-btn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+.tool-btn.active span{color:var(--accent)}
+.tool-sep-v{width:1px;height:36px;background:var(--border);margin:0 3px;flex-shrink:0}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+#fab-row{
+  position:fixed;right:14px;bottom:calc(var(--bottombar) + 14px);
+  display:flex;flex-direction:column;gap:10px;z-index:90;
+}
+.fab{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);border:none;
+}
+.fab:active{transform:scale(.88)}
+#fab-undo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-redo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-color{background:var(--accent);color:#fff;width:52px;height:52px}
+
+/* ===== SLIDE-UP PANELS ===== */
+.panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:none;opacity:0;transition:opacity .25s;
+}
+.panel-overlay.show{display:block;opacity:1}
+.slide-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:201;
+  background:var(--panel);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.slide-panel.show{transform:translateY(0)}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 4px}
+.panel-header{padding:8px 20px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:16px;font-weight:600}
+.panel-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.panel-body{padding:0 16px 16px}
+
+/* Color panel */
+#color-grid-mob{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:14px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch:active{transform:scale(.85)}
+.color-swatch.active{border-color:#fff}
+.cur-colors-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#fg-color,#bg-color{width:44px;height:44px;border-radius:10px;border:2px solid var(--border);cursor:pointer}
+.swap-btn{padding:8px 14px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.swap-btn:active{background:var(--hover)}
+#custom-color-mob{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px}
+
+/* Brush panel sliders */
+.slider-group{margin-bottom:16px}
+.slider-group label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-group label span{color:var(--accent);font-weight:600}
+.slider-group input[type=range]{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:var(--border);outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--panel)}
+
+/* Grid buttons */
+.grid-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.gbtn{padding:12px 6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+.gbtn:active{transform:scale(.92)}
+.gbtn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+
+/* Select boxes */
+select.mob-select{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:'Outfit',sans-serif}
+
+/* Layers */
+.layer-mob{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.layer-mob.active{border-color:var(--accent);background:var(--active)}
+.layer-mob-thumb{width:36px;height:28px;border-radius:5px;background:repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/8px 8px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-mob-thumb canvas{width:100%;height:100%}
+.layer-mob-name{flex:1;font-size:13px}
+.layer-mob-vis{font-size:18px;cursor:pointer;padding:4px}
+.layer-mob-del{font-size:16px;color:var(--accent2);cursor:pointer;padding:4px}
+.layer-actions-mob{display:flex;gap:8px;margin-top:10px}
+.layer-action-mob{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center}
+.layer-action-mob:active{background:var(--hover)}
+
+/* Filters grid */
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.filter-mob-btn{padding:12px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;display:flex;align-items:center;gap:8px}
+.filter-mob-btn:active{background:var(--hover);transform:scale(.96)}
+
+/* Zoom indicator */
+#zoom-badge{
+  position:fixed;left:14px;bottom:calc(var(--bottombar) + 14px);
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);
+  z-index:90;font-weight:600;
+}
+
+/* More menu */
+.more-menu{
+  position:fixed;bottom:calc(var(--bottombar)+8px);right:72px;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:6px;z-index:300;display:none;min-width:180px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.more-menu.show{display:block}
+.more-item{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.more-item:active{background:var(--hover);color:var(--text)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%}
+.modal-sheet h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-row label{font-size:13px;color:var(--text2);width:80px}
+.modal-row input,.modal-row select{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;border:none;font-family:'Outfit',sans-serif;text-align:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--topbar)+12px);left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 18px;font-size:13px;color:var(--text);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* Pinch hint */
+#pinch-hint{position:fixed;bottom:calc(var(--bottombar)+80px);left:50%;transform:translateX(-50%);background:rgba(108,99,255,.85);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:89;opacity:0;transition:opacity .5s;pointer-events:none}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div id="app-title">CanvasPro</div>
+  <div class="top-btn" onclick="showPanel('layers-panel')" title="Layers">🗂️</div>
+  <div class="top-btn" onclick="showPanel('filters-panel')" title="Filters">✨</div>
+  <div class="top-btn" onclick="toggleMoreMenu()" id="more-btn">⋯</div>
+  <div class="top-btn accent" onclick="exportImage()">Save</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container">
+  <div id="canvas-wrapper">
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-main"></canvas>
+    <canvas id="canvas-overlay"></canvas>
+    <div id="text-input-container"><div id="text-input" contenteditable="true" spellcheck="false"></div></div>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<!-- FABs -->
+<div id="fab-row">
+  <div class="fab" id="fab-redo" onclick="redoAction()">↪</div>
+  <div class="fab" id="fab-undo" onclick="undoAction()">↩</div>
+  <div class="fab" id="fab-color" onclick="showPanel('color-panel')">🎨</div>
+</div>
+
+<!-- Zoom Badge -->
+<div id="zoom-badge">100%</div>
+
+<!-- Bottom Toolbar -->
+<div id="bottombar">
+  <div class="tool-btn active" id="t-pen" onclick="setTool('pen')">✏️<span>Pen</span></div>
+  <div class="tool-btn" id="t-brush" onclick="setTool('brush')">🖌️<span>Brush</span></div>
+  <div class="tool-btn" id="t-eraser" onclick="setTool('eraser')">🧹<span>Erase</span></div>
+  <div class="tool-btn" id="t-fill" onclick="setTool('fill')">🪣<span>Fill</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-line" onclick="setTool('line')">╱<span>Line</span></div>
+  <div class="tool-btn" id="t-rect" onclick="setTool('rect')">⬜<span>Rect</span></div>
+  <div class="tool-btn" id="t-ellipse" onclick="setTool('ellipse')">⭕<span>Oval</span></div>
+  <div class="tool-btn" id="t-triangle" onclick="setTool('triangle')">△<span>Tri</span></div>
+  <div class="tool-btn" id="t-arrow" onclick="setTool('arrow')">→<span>Arrow</span></div>
+  <div class="tool-btn" id="t-star" onclick="setTool('star')">⭐<span>Star</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-text" onclick="setTool('text')">T<span>Text</span></div>
+  <div class="tool-btn" id="t-eyedrop" onclick="setTool('eyedrop')">💉<span>Pick</span></div>
+  <div class="tool-btn" id="t-select" onclick="setTool('select')">⬚<span>Select</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" onclick="showPanel('brush-panel')">⚙️<span>Options</span></div>
+</div>
+
+<!-- More Menu -->
+<div class="more-menu" id="more-menu">
+  <div class="more-item" onclick="showNew();closeMoreMenu()">📄 New Canvas</div>
+  <div class="more-item" onclick="openFile();closeMoreMenu()">📂 Open Image</div>
+  <div class="more-item" onclick="selectAll();closeMoreMenu()">⬜ Select All</div>
+  <div class="more-item" onclick="clearCanvas();closeMoreMenu()">🗑️ Clear Layer</div>
+  <div class="more-item" onclick="flipH();closeMoreMenu()">↔️ Flip H</div>
+  <div class="more-item" onclick="flipV();closeMoreMenu()">↕️ Flip V</div>
+  <div class="more-item" onclick="rotateCanvas();closeMoreMenu()">🔄 Rotate 90°</div>
+</div>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+<!-- COLOR PANEL -->
+<div class="slide-panel" id="color-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🎨 Colors</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="cur-colors-row">
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Foreground</div>
+        <div id="fg-color" onclick="document.getElementById('fg-picker').click()"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Background</div>
+        <div id="bg-color" onclick="document.getElementById('bg-picker').click()"></div>
+      </div>
+      <div class="swap-btn" onclick="swapColors()">⇆ Swap</div>
+    </div>
+    <input type="color" id="fg-picker" style="display:none" oninput="setFgColor(this.value)">
+    <input type="color" id="bg-picker" style="display:none" oninput="setBgColor(this.value)">
+    <div id="color-grid-mob"></div>
+    <input type="color" id="custom-color-mob" title="Custom" oninput="setFgColor(this.value)">
+  </div>
+</div>
+
+<!-- BRUSH PANEL -->
+<div class="slide-panel" id="brush-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>⚙️ Brush & Shape Options</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="slider-group">
+      <label>Size <span id="bsv">5</span>px</label>
+      <input type="range" id="brush-size" min="1" max="100" value="5" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Opacity <span id="bov">100</span>%</label>
+      <input type="range" id="brush-opacity" min="1" max="100" value="100" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Hardness <span id="bhv">80</span>%</label>
+      <input type="range" id="brush-hardness" min="0" max="100" value="80" oninput="updateBrush()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Blend Mode</div>
+    <select id="blend-mode" class="mob-select" onchange="updateBlend()">
+      <option value="source-over">Normal</option><option value="multiply">Multiply</option>
+      <option value="screen">Screen</option><option value="overlay">Overlay</option>
+      <option value="darken">Darken</option><option value="lighten">Lighten</option>
+      <option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+      <option value="difference">Difference</option><option value="exclusion">Exclusion</option>
+    </select>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Shape Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="shape-stroke" onclick="setShapeStyle('stroke')">⬡ Stroke</div>
+      <div class="gbtn" id="shape-fill" onclick="setShapeStyle('fill')">⬢ Fill</div>
+      <div class="gbtn" id="shape-both" onclick="setShapeStyle('both')">◼ Both</div>
+    </div>
+    <div class="slider-group">
+      <label>Stroke W <span id="swv">2</span>px</label>
+      <input type="range" id="stroke-width" min="1" max="30" value="2" oninput="updateStroke()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Line Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="ls-solid" onclick="setLineDash('solid')">— Solid</div>
+      <div class="gbtn" id="ls-dashed" onclick="setLineDash('dashed')">- - Dash</div>
+      <div class="gbtn" id="ls-dotted" onclick="setLineDash('dotted')">··· Dot</div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Text Settings</div>
+    <div class="slider-group">
+      <label>Font Size <span id="fsv">20</span>px</label>
+      <input type="range" id="font-size-slider" min="8" max="120" value="20" oninput="updateTextStyle()">
+    </div>
+    <select id="font-family" class="mob-select" onchange="updateTextStyle()">
+      <option>Arial</option><option>Georgia</option><option>Courier New</option>
+      <option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+      <option>Comic Sans MS</option><option selected>Outfit</option>
+    </select>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn" id="txt-bold" onclick="toggleTextBold()" style="font-weight:700">B Bold</div>
+      <div class="gbtn" id="txt-italic" onclick="toggleTextItalic()" style="font-style:italic">I Italic</div>
+      <div class="gbtn" id="txt-under" onclick="toggleTextUnder()" style="text-decoration:underline">U Under</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERS PANEL -->
+<div class="slide-panel" id="layers-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🗂️ Layers</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div id="layers-list-mob"></div>
+    <div class="layer-actions-mob">
+      <div class="layer-action-mob" onclick="addLayer()">+ Add</div>
+      <div class="layer-action-mob" onclick="duplicateLayer()">⧉ Dup</div>
+      <div class="layer-action-mob" onclick="mergeDown()">↓ Merge</div>
+      <div class="layer-action-mob" onclick="deleteLayer()">✕ Del</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div class="slide-panel" id="filters-panel">
+  <div class="panel-handl<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<title>CanvasPro Mobile - Fixed</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f13;--panel:#1a1a22;--panel2:#22222e;--border:#2e2e3e;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8d8;
+  --text:#e8e8f0;--text2:#9090a8;--hover:#2a2a38;--active:#6c63ff28;
+  --radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px);
+  --topbar:52px;--bottombar:68px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text)}
+
+/* ===== TOP BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:100;
+}
+#app-title{font-size:16px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.top-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.top-btn:active{background:var(--hover);transform:scale(.92)}
+.top-btn.accent{background:var(--accent);color:#fff;font-size:14px;width:auto;padding:0 14px;font-weight:600}
+
+/* ===== CANVAS AREA - FIXED ===== */
+#canvas-container{
+  position:fixed;top:var(--topbar);left:0;right:0;
+  bottom:var(--bottombar);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a1a28 0%,#0f0f13 100%);
+  touch-action:none;
+}
+#canvas-wrapper{
+  position:relative;
+  border-radius:4px;
+  box-shadow:0 0 0 1px var(--border),0 8px 40px rgba(0,0,0,.7);
+}
+#canvas-wrapper canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  border-radius:4px;
+}
+/* FIX: overlay should capture touches */
+#canvas-overlay{
+  pointer-events: auto !important;
+  z-index: 20;
+  cursor: crosshair;
+}
+#selection-box{
+  position:absolute;
+  border:2px dashed var(--accent);
+  background:rgba(108,99,255,.08);
+  pointer-events:none;
+  display:none;
+  z-index:25;
+  border-radius:2px;
+}
+#text-input-container{position:absolute;display:none;z-index:50}
+#text-input{background:rgba(0,0,0,.2);border:2px dashed var(--accent);outline:none;color:#fff;font-size:20px;min-width:80px;min-height:30px;padding:4px;border-radius:4px;white-space:pre;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ===== BOTTOM TOOL BAR ===== */
+#bottombar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--bottombar) + var(--safe-bottom));
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;padding-bottom:var(--safe-bottom);
+  gap:2px;z-index:100;overflow-x:auto;overflow-y:hidden;
+}
+#bottombar::-webkit-scrollbar{display:none}
+.tool-btn{
+  min-width:52px;height:52px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);font-size:20px;transition:all .15s;
+  border:1.5px solid transparent;flex-shrink:0;gap:2px;
+}
+.tool-btn span{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.tool-btn:active{transform:scale(.88)}
+.tool-btn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+.tool-btn.active span{color:var(--accent)}
+.tool-sep-v{width:1px;height:36px;background:var(--border);margin:0 3px;flex-shrink:0}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+#fab-row{
+  position:fixed;right:14px;bottom:calc(var(--bottombar) + 14px);
+  display:flex;flex-direction:column;gap:10px;z-index:90;
+}
+.fab{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);border:none;
+}
+.fab:active{transform:scale(.88)}
+#fab-undo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-redo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-color{background:var(--accent);color:#fff;width:52px;height:52px}
+
+/* ===== SLIDE-UP PANELS ===== */
+.panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:none;opacity:0;transition:opacity .25s;
+}
+.panel-overlay.show{display:block;opacity:1}
+.slide-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:201;
+  background:var(--panel);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.slide-panel.show{transform:translateY(0)}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 4px}
+.panel-header{padding:8px 20px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:16px;font-weight:600}
+.panel-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.panel-body{padding:0 16px 16px}
+
+/* Color panel */
+#color-grid-mob{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:14px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch:active{transform:scale(.85)}
+.color-swatch.active{border-color:#fff}
+.cur-colors-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#fg-color,#bg-color{width:44px;height:44px;border-radius:10px;border:2px solid var(--border);cursor:pointer}
+.swap-btn{padding:8px 14px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.swap-btn:active{background:var(--hover)}
+#custom-color-mob{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px}
+
+/* Brush panel sliders */
+.slider-group{margin-bottom:16px}
+.slider-group label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-group label span{color:var(--accent);font-weight:600}
+.slider-group input[type=range]{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:var(--border);outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--panel)}
+
+/* Grid buttons */
+.grid-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.gbtn{padding:12px 6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+.gbtn:active{transform:scale(.92)}
+.gbtn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+
+/* Select boxes */
+select.mob-select{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:'Outfit',sans-serif}
+
+/* Layers */
+.layer-mob{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.layer-mob.active{border-color:var(--accent);background:var(--active)}
+.layer-mob-thumb{width:36px;height:28px;border-radius:5px;background:repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/8px 8px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-mob-thumb canvas{width:100%;height:100%}
+.layer-mob-name{flex:1;font-size:13px}
+.layer-mob-vis{font-size:18px;cursor:pointer;padding:4px}
+.layer-mob-del{font-size:16px;color:var(--accent2);cursor:pointer;padding:4px}
+.layer-actions-mob{display:flex;gap:8px;margin-top:10px}
+.layer-action-mob{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center}
+.layer-action-mob:active{background:var(--hover)}
+
+/* Filters grid */
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.filter-mob-btn{padding:12px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;display:flex;align-items:center;gap:8px}
+.filter-mob-btn:active{background:var(--hover);transform:scale(.96)}
+
+/* Zoom indicator */
+#zoom-badge{
+  position:fixed;left:14px;bottom:calc(var(--bottombar) + 14px);
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);
+  z-index:90;font-weight:600;
+}
+
+/* More menu */
+.more-menu{
+  position:fixed;bottom:calc(var(--bottombar)+8px);right:72px;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:6px;z-index:300;display:none;min-width:180px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.more-menu.show{display:block}
+.more-item{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.more-item:active{background:var(--hover);color:var(--text)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%}
+.modal-sheet h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-row label{font-size:13px;color:var(--text2);width:80px}
+.modal-row input,.modal-row select{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;border:none;font-family:'Outfit',sans-serif;text-align:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--topbar)+12px);left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 18px;font-size:13px;color:var(--text);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* Pinch hint */
+#pinch-hint{position:fixed;bottom:calc(var(--bottombar)+80px);left:50%;transform:translateX(-50%);background:rgba(108,99,255,.85);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:89;opacity:0;transition:opacity .5s;pointer-events:none}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div id="app-title">CanvasPro</div>
+  <div class="top-btn" onclick="showPanel('layers-panel')" title="Layers">🗂️</div>
+  <div class="top-btn" onclick="showPanel('filters-panel')" title="Filters">✨</div>
+  <div class="top-btn" onclick="toggleMoreMenu()" id="more-btn">⋯</div>
+  <div class="top-btn accent" onclick="exportImage()">Save</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container">
+  <div id="canvas-wrapper">
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-main"></canvas>
+    <canvas id="canvas-overlay"></canvas>
+    <div id="text-input-container"><div id="text-input" contenteditable="true" spellcheck="false"></div></div>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<!-- FABs -->
+<div id="fab-row">
+  <div class="fab" id="fab-redo" onclick="redoAction()">↪</div>
+  <div class="fab" id="fab-undo" onclick="undoAction()">↩</div>
+  <div class="fab" id="fab-color" onclick="showPanel('color-panel')">🎨</div>
+</div>
+
+<!-- Zoom Badge -->
+<div id="zoom-badge">100%</div>
+
+<!-- Bottom Toolbar -->
+<div id="bottombar">
+  <div class="tool-btn active" id="t-pen" onclick="setTool('pen')">✏️<span>Pen</span></div>
+  <div class="tool-btn" id="t-brush" onclick="setTool('brush')">🖌️<span>Brush</span></div>
+  <div class="tool-btn" id="t-eraser" onclick="setTool('eraser')">🧹<span>Erase</span></div>
+  <div class="tool-btn" id="t-fill" onclick="setTool('fill')">🪣<span>Fill</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-line" onclick="setTool('line')">╱<span>Line</span></div>
+  <div class="tool-btn" id="t-rect" onclick="setTool('rect')">⬜<span>Rect</span></div>
+  <div class="tool-btn" id="t-ellipse" onclick="setTool('ellipse')">⭕<span>Oval</span></div>
+  <div class="tool-btn" id="t-triangle" onclick="setTool('triangle')">△<span>Tri</span></div>
+  <div class="tool-btn" id="t-arrow" onclick="setTool('arrow')">→<span>Arrow</span></div>
+  <div class="tool-btn" id="t-star" onclick="setTool('star')">⭐<span>Star</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-text" onclick="setTool('text')">T<span>Text</span></div>
+  <div class="tool-btn" id="t-eyedrop" onclick="setTool('eyedrop')">💉<span>Pick</span></div>
+  <div class="tool-btn" id="t-select" onclick="setTool('select')">⬚<span>Select</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" onclick="showPanel('brush-panel')">⚙️<span>Options</span></div>
+</div>
+
+<!-- More Menu -->
+<div class="more-menu" id="more-menu">
+  <div class="more-item" onclick="showNew();closeMoreMenu()">📄 New Canvas</div>
+  <div class="more-item" onclick="openFile();closeMoreMenu()">📂 Open Image</div>
+  <div class="more-item" onclick="selectAll();closeMoreMenu()">⬜ Select All</div>
+  <div class="more-item" onclick="clearCanvas();closeMoreMenu()">🗑️ Clear Layer</div>
+  <div class="more-item" onclick="flipH();closeMoreMenu()">↔️ Flip H</div>
+  <div class="more-item" onclick="flipV();closeMoreMenu()">↕️ Flip V</div>
+  <div class="more-item" onclick="rotateCanvas();closeMoreMenu()">🔄 Rotate 90°</div>
+</div>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+<!-- COLOR PANEL -->
+<div class="slide-panel" id="color-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🎨 Colors</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="cur-colors-row">
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Foreground</div>
+        <div id="fg-color" onclick="document.getElementById('fg-picker').click()"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Background</div>
+        <div id="bg-color" onclick="document.getElementById('bg-picker').click()"></div>
+      </div>
+      <div class="swap-btn" onclick="swapColors()">⇆ Swap</div>
+    </div>
+    <input type="color" id="fg-picker" style="display:none" oninput="setFgColor(this.value)">
+    <input type="color" id="bg-picker" style="display:none" oninput="setBgColor(this.value)">
+    <div id="color-grid-mob"></div>
+    <input type="color" id="custom-color-mob" title="Custom" oninput="setFgColor(this.value)">
+  </div>
+</div>
+
+<!-- BRUSH PANEL -->
+<div class="slide-panel" id="brush-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>⚙️ Brush & Shape Options</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="slider-group">
+      <label>Size <span id="bsv">5</span>px</label>
+      <input type="range" id="brush-size" min="1" max="100" value="5" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Opacity <span id="bov">100</span>%</label>
+      <input type="range" id="brush-opacity" min="1" max="100" value="100" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Hardness <span id="bhv">80</span>%</label>
+      <input type="range" id="brush-hardness" min="0" max="100" value="80" oninput="updateBrush()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Blend Mode</div>
+    <select id="blend-mode" class="mob-select" onchange="updateBlend()">
+      <option value="source-over">Normal</option><option value="multiply">Multiply</option>
+      <option value="screen">Screen</option><option value="overlay">Overlay</option>
+      <option value="darken">Darken</option><option value="lighten">Lighten</option>
+      <option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+      <option value="difference">Difference</option><option value="exclusion">Exclusion</option>
+    </select>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Shape Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="shape-stroke" onclick="setShapeStyle('stroke')">⬡ Stroke</div>
+      <div class="gbtn" id="shape-fill" onclick="setShapeStyle('fill')">⬢ Fill</div>
+      <div class="gbtn" id="shape-both" onclick="setShapeStyle('both')">◼ Both</div>
+    </div>
+    <div class="slider-group">
+      <label>Stroke W <span id="swv">2</span>px</label>
+      <input type="range" id="stroke-width" min="1" max="30" value="2" oninput="updateStroke()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Line Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="ls-solid" onclick="setLineDash('solid')">— Solid</div>
+      <div class="gbtn" id="ls-dashed" onclick="setLineDash('dashed')">- - Dash</div>
+      <div class="gbtn" id="ls-dotted" onclick="setLineDash('dotted')">··· Dot</div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Text Settings</div>
+    <div class="slider-group">
+      <label>Font Size <span id="fsv">20</span>px</label>
+      <input type="range" id="font-size-slider" min="8" max="120" value="20" oninput="updateTextStyle()">
+    </div>
+    <select id="font-family" class="mob-select" onchange="updateTextStyle()">
+      <option>Arial</option><option>Georgia</option><option>Courier New</option>
+      <option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+      <option>Comic Sans MS</option><option selected>Outfit</option>
+    </select>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn" id="txt-bold" onclick="toggleTextBold()" style="font-weight:700">B Bold</div>
+      <div class="gbtn" id="txt-italic" onclick="toggleTextItalic()" style="font-style:italic">I Italic</div>
+      <div class="gbtn" id="txt-under" onclick="toggleTextUnder()" style="text-decoration:underline">U Under</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERS PANEL -->
+<div class="slide-panel" id="layers-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🗂️ Layers</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div id="layers-list-mob"></div>
+    <div class="layer-actions-mob">
+      <div class="layer-action-mob" onclick="addLayer()">+ Add</div>
+      <div class="layer-action-mob" onclick="duplicateLayer()">⧉ Dup</div>
+      <div class="layer-action-mob" onclick="mergeDown()">↓ Merge</div>
+      <div class="layer-action-mob" onclick="deleteLayer()">✕ Del</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div class="slide-panel" id="filters-panel">
+  <div class="panel-handl<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<title>CanvasPro Mobile - Fixed</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f13;--panel:#1a1a22;--panel2:#22222e;--border:#2e2e3e;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8d8;
+  --text:#e8e8f0;--text2:#9090a8;--hover:#2a2a38;--active:#6c63ff28;
+  --radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px);
+  --topbar:52px;--bottombar:68px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text)}
+
+/* ===== TOP BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:100;
+}
+#app-title{font-size:16px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.top-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.top-btn:active{background:var(--hover);transform:scale(.92)}
+.top-btn.accent{background:var(--accent);color:#fff;font-size:14px;width:auto;padding:0 14px;font-weight:600}
+
+/* ===== CANVAS AREA - FIXED ===== */
+#canvas-container{
+  position:fixed;top:var(--topbar);left:0;right:0;
+  bottom:var(--bottombar);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a1a28 0%,#0f0f13 100%);
+  touch-action:none;
+}
+#canvas-wrapper{
+  position:relative;
+  border-radius:4px;
+  box-shadow:0 0 0 1px var(--border),0 8px 40px rgba(0,0,0,.7);
+}
+#canvas-wrapper canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  border-radius:4px;
+}
+/* FIX: overlay should capture touches */
+#canvas-overlay{
+  pointer-events: auto !important;
+  z-index: 20;
+  cursor: crosshair;
+}
+#selection-box{
+  position:absolute;
+  border:2px dashed var(--accent);
+  background:rgba(108,99,255,.08);
+  pointer-events:none;
+  display:none;
+  z-index:25;
+  border-radius:2px;
+}
+#text-input-container{position:absolute;display:none;z-index:50}
+#text-input{background:rgba(0,0,0,.2);border:2px dashed var(--accent);outline:none;color:#fff;font-size:20px;min-width:80px;min-height:30px;padding:4px;border-radius:4px;white-space:pre;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ===== BOTTOM TOOL BAR ===== */
+#bottombar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--bottombar) + var(--safe-bottom));
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;padding-bottom:var(--safe-bottom);
+  gap:2px;z-index:100;overflow-x:auto;overflow-y:hidden;
+}
+#bottombar::-webkit-scrollbar{display:none}
+.tool-btn{
+  min-width:52px;height:52px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);font-size:20px;transition:all .15s;
+  border:1.5px solid transparent;flex-shrink:0;gap:2px;
+}
+.tool-btn span{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.tool-btn:active{transform:scale(.88)}
+.tool-btn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+.tool-btn.active span{color:var(--accent)}
+.tool-sep-v{width:1px;height:36px;background:var(--border);margin:0 3px;flex-shrink:0}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+#fab-row{
+  position:fixed;right:14px;bottom:calc(var(--bottombar) + 14px);
+  display:flex;flex-direction:column;gap:10px;z-index:90;
+}
+.fab{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);border:none;
+}
+.fab:active{transform:scale(.88)}
+#fab-undo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-redo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-color{background:var(--accent);color:#fff;width:52px;height:52px}
+
+/* ===== SLIDE-UP PANELS ===== */
+.panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:none;opacity:0;transition:opacity .25s;
+}
+.panel-overlay.show{display:block;opacity:1}
+.slide-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:201;
+  background:var(--panel);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.slide-panel.show{transform:translateY(0)}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 4px}
+.panel-header{padding:8px 20px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:16px;font-weight:600}
+.panel-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.panel-body{padding:0 16px 16px}
+
+/* Color panel */
+#color-grid-mob{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:14px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch:active{transform:scale(.85)}
+.color-swatch.active{border-color:#fff}
+.cur-colors-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#fg-color,#bg-color{width:44px;height:44px;border-radius:10px;border:2px solid var(--border);cursor:pointer}
+.swap-btn{padding:8px 14px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.swap-btn:active{background:var(--hover)}
+#custom-color-mob{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px}
+
+/* Brush panel sliders */
+.slider-group{margin-bottom:16px}
+.slider-group label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-group label span{color:var(--accent);font-weight:600}
+.slider-group input[type=range]{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:var(--border);outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--panel)}
+
+/* Grid buttons */
+.grid-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.gbtn{padding:12px 6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+.gbtn:active{transform:scale(.92)}
+.gbtn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+
+/* Select boxes */
+select.mob-select{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:'Outfit',sans-serif}
+
+/* Layers */
+.layer-mob{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.layer-mob.active{border-color:var(--accent);background:var(--active)}
+.layer-mob-thumb{width:36px;height:28px;border-radius:5px;background:repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/8px 8px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-mob-thumb canvas{width:100%;height:100%}
+.layer-mob-name{flex:1;font-size:13px}
+.layer-mob-vis{font-size:18px;cursor:pointer;padding:4px}
+.layer-mob-del{font-size:16px;color:var(--accent2);cursor:pointer;padding:4px}
+.layer-actions-mob{display:flex;gap:8px;margin-top:10px}
+.layer-action-mob{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center}
+.layer-action-mob:active{background:var(--hover)}
+
+/* Filters grid */
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.filter-mob-btn{padding:12px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;display:flex;align-items:center;gap:8px}
+.filter-mob-btn:active{background:var(--hover);transform:scale(.96)}
+
+/* Zoom indicator */
+#zoom-badge{
+  position:fixed;left:14px;bottom:calc(var(--bottombar) + 14px);
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);
+  z-index:90;font-weight:600;
+}
+
+/* More menu */
+.more-menu{
+  position:fixed;bottom:calc(var(--bottombar)+8px);right:72px;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:6px;z-index:300;display:none;min-width:180px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.more-menu.show{display:block}
+.more-item{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.more-item:active{background:var(--hover);color:var(--text)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%}
+.modal-sheet h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-row label{font-size:13px;color:var(--text2);width:80px}
+.modal-row input,.modal-row select{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;border:none;font-family:'Outfit',sans-serif;text-align:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--topbar)+12px);left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 18px;font-size:13px;color:var(--text);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* Pinch hint */
+#pinch-hint{position:fixed;bottom:calc(var(--bottombar)+80px);left:50%;transform:translateX(-50%);background:rgba(108,99,255,.85);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:89;opacity:0;transition:opacity .5s;pointer-events:none}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div id="app-title">CanvasPro</div>
+  <div class="top-btn" onclick="showPanel('layers-panel')" title="Layers">🗂️</div>
+  <div class="top-btn" onclick="showPanel('filters-panel')" title="Filters">✨</div>
+  <div class="top-btn" onclick="toggleMoreMenu()" id="more-btn">⋯</div>
+  <div class="top-btn accent" onclick="exportImage()">Save</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container">
+  <div id="canvas-wrapper">
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-main"></canvas>
+    <canvas id="canvas-overlay"></canvas>
+    <div id="text-input-container"><div id="text-input" contenteditable="true" spellcheck="false"></div></div>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<!-- FABs -->
+<div id="fab-row">
+  <div class="fab" id="fab-redo" onclick="redoAction()">↪</div>
+  <div class="fab" id="fab-undo" onclick="undoAction()">↩</div>
+  <div class="fab" id="fab-color" onclick="showPanel('color-panel')">🎨</div>
+</div>
+
+<!-- Zoom Badge -->
+<div id="zoom-badge">100%</div>
+
+<!-- Bottom Toolbar -->
+<div id="bottombar">
+  <div class="tool-btn active" id="t-pen" onclick="setTool('pen')">✏️<span>Pen</span></div>
+  <div class="tool-btn" id="t-brush" onclick="setTool('brush')">🖌️<span>Brush</span></div>
+  <div class="tool-btn" id="t-eraser" onclick="setTool('eraser')">🧹<span>Erase</span></div>
+  <div class="tool-btn" id="t-fill" onclick="setTool('fill')">🪣<span>Fill</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-line" onclick="setTool('line')">╱<span>Line</span></div>
+  <div class="tool-btn" id="t-rect" onclick="setTool('rect')">⬜<span>Rect</span></div>
+  <div class="tool-btn" id="t-ellipse" onclick="setTool('ellipse')">⭕<span>Oval</span></div>
+  <div class="tool-btn" id="t-triangle" onclick="setTool('triangle')">△<span>Tri</span></div>
+  <div class="tool-btn" id="t-arrow" onclick="setTool('arrow')">→<span>Arrow</span></div>
+  <div class="tool-btn" id="t-star" onclick="setTool('star')">⭐<span>Star</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-text" onclick="setTool('text')">T<span>Text</span></div>
+  <div class="tool-btn" id="t-eyedrop" onclick="setTool('eyedrop')">💉<span>Pick</span></div>
+  <div class="tool-btn" id="t-select" onclick="setTool('select')">⬚<span>Select</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" onclick="showPanel('brush-panel')">⚙️<span>Options</span></div>
+</div>
+
+<!-- More Menu -->
+<div class="more-menu" id="more-menu">
+  <div class="more-item" onclick="showNew();closeMoreMenu()">📄 New Canvas</div>
+  <div class="more-item" onclick="openFile();closeMoreMenu()">📂 Open Image</div>
+  <div class="more-item" onclick="selectAll();closeMoreMenu()">⬜ Select All</div>
+  <div class="more-item" onclick="clearCanvas();closeMoreMenu()">🗑️ Clear Layer</div>
+  <div class="more-item" onclick="flipH();closeMoreMenu()">↔️ Flip H</div>
+  <div class="more-item" onclick="flipV();closeMoreMenu()">↕️ Flip V</div>
+  <div class="more-item" onclick="rotateCanvas();closeMoreMenu()">🔄 Rotate 90°</div>
+</div>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+<!-- COLOR PANEL -->
+<div class="slide-panel" id="color-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🎨 Colors</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="cur-colors-row">
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Foreground</div>
+        <div id="fg-color" onclick="document.getElementById('fg-picker').click()"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Background</div>
+        <div id="bg-color" onclick="document.getElementById('bg-picker').click()"></div>
+      </div>
+      <div class="swap-btn" onclick="swapColors()">⇆ Swap</div>
+    </div>
+    <input type="color" id="fg-picker" style="display:none" oninput="setFgColor(this.value)">
+    <input type="color" id="bg-picker" style="display:none" oninput="setBgColor(this.value)">
+    <div id="color-grid-mob"></div>
+    <input type="color" id="custom-color-mob" title="Custom" oninput="setFgColor(this.value)">
+  </div>
+</div>
+
+<!-- BRUSH PANEL -->
+<div class="slide-panel" id="brush-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>⚙️ Brush & Shape Options</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="slider-group">
+      <label>Size <span id="bsv">5</span>px</label>
+      <input type="range" id="brush-size" min="1" max="100" value="5" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Opacity <span id="bov">100</span>%</label>
+      <input type="range" id="brush-opacity" min="1" max="100" value="100" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Hardness <span id="bhv">80</span>%</label>
+      <input type="range" id="brush-hardness" min="0" max="100" value="80" oninput="updateBrush()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Blend Mode</div>
+    <select id="blend-mode" class="mob-select" onchange="updateBlend()">
+      <option value="source-over">Normal</option><option value="multiply">Multiply</option>
+      <option value="screen">Screen</option><option value="overlay">Overlay</option>
+      <option value="darken">Darken</option><option value="lighten">Lighten</option>
+      <option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+      <option value="difference">Difference</option><option value="exclusion">Exclusion</option>
+    </select>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Shape Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="shape-stroke" onclick="setShapeStyle('stroke')">⬡ Stroke</div>
+      <div class="gbtn" id="shape-fill" onclick="setShapeStyle('fill')">⬢ Fill</div>
+      <div class="gbtn" id="shape-both" onclick="setShapeStyle('both')">◼ Both</div>
+    </div>
+    <div class="slider-group">
+      <label>Stroke W <span id="swv">2</span>px</label>
+      <input type="range" id="stroke-width" min="1" max="30" value="2" oninput="updateStroke()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Line Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="ls-solid" onclick="setLineDash('solid')">— Solid</div>
+      <div class="gbtn" id="ls-dashed" onclick="setLineDash('dashed')">- - Dash</div>
+      <div class="gbtn" id="ls-dotted" onclick="setLineDash('dotted')">··· Dot</div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Text Settings</div>
+    <div class="slider-group">
+      <label>Font Size <span id="fsv">20</span>px</label>
+      <input type="range" id="font-size-slider" min="8" max="120" value="20" oninput="updateTextStyle()">
+    </div>
+    <select id="font-family" class="mob-select" onchange="updateTextStyle()">
+      <option>Arial</option><option>Georgia</option><option>Courier New</option>
+      <option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+      <option>Comic Sans MS</option><option selected>Outfit</option>
+    </select>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn" id="txt-bold" onclick="toggleTextBold()" style="font-weight:700">B Bold</div>
+      <div class="gbtn" id="txt-italic" onclick="toggleTextItalic()" style="font-style:italic">I Italic</div>
+      <div class="gbtn" id="txt-under" onclick="toggleTextUnder()" style="text-decoration:underline">U Under</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERS PANEL -->
+<div class="slide-panel" id="layers-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🗂️ Layers</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div id="layers-list-mob"></div>
+    <div class="layer-actions-mob">
+      <div class="layer-action-mob" onclick="addLayer()">+ Add</div>
+      <div class="layer-action-mob" onclick="duplicateLayer()">⧉ Dup</div>
+      <div class="layer-action-mob" onclick="mergeDown()">↓ Merge</div>
+      <div class="layer-action-mob" onclick="deleteLayer()">✕ Del</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div class="slide-panel" id="filters-panel">
+  <div class="panel-handl<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<title>CanvasPro Mobile - Fixed</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f13;--panel:#1a1a22;--panel2:#22222e;--border:#2e2e3e;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8d8;
+  --text:#e8e8f0;--text2:#9090a8;--hover:#2a2a38;--active:#6c63ff28;
+  --radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px);
+  --topbar:52px;--bottombar:68px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text)}
+
+/* ===== TOP BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:100;
+}
+#app-title{font-size:16px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.top-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.top-btn:active{background:var(--hover);transform:scale(.92)}
+.top-btn.accent{background:var(--accent);color:#fff;font-size:14px;width:auto;padding:0 14px;font-weight:600}
+
+/* ===== CANVAS AREA - FIXED ===== */
+#canvas-container{
+  position:fixed;top:var(--topbar);left:0;right:0;
+  bottom:var(--bottombar);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a1a28 0%,#0f0f13 100%);
+  touch-action:none;
+}
+#canvas-wrapper{
+  position:relative;
+  border-radius:4px;
+  box-shadow:0 0 0 1px var(--border),0 8px 40px rgba(0,0,0,.7);
+}
+#canvas-wrapper canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  border-radius:4px;
+}
+/* FIX: overlay should capture touches */
+#canvas-overlay{
+  pointer-events: auto !important;
+  z-index: 20;
+  cursor: crosshair;
+}
+#selection-box{
+  position:absolute;
+  border:2px dashed var(--accent);
+  background:rgba(108,99,255,.08);
+  pointer-events:none;
+  display:none;
+  z-index:25;
+  border-radius:2px;
+}
+#text-input-container{position:absolute;display:none;z-index:50}
+#text-input{background:rgba(0,0,0,.2);border:2px dashed var(--accent);outline:none;color:#fff;font-size:20px;min-width:80px;min-height:30px;padding:4px;border-radius:4px;white-space:pre;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ===== BOTTOM TOOL BAR ===== */
+#bottombar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--bottombar) + var(--safe-bottom));
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;padding-bottom:var(--safe-bottom);
+  gap:2px;z-index:100;overflow-x:auto;overflow-y:hidden;
+}
+#bottombar::-webkit-scrollbar{display:none}
+.tool-btn{
+  min-width:52px;height:52px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);font-size:20px;transition:all .15s;
+  border:1.5px solid transparent;flex-shrink:0;gap:2px;
+}
+.tool-btn span{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.tool-btn:active{transform:scale(.88)}
+.tool-btn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+.tool-btn.active span{color:var(--accent)}
+.tool-sep-v{width:1px;height:36px;background:var(--border);margin:0 3px;flex-shrink:0}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+#fab-row{
+  position:fixed;right:14px;bottom:calc(var(--bottombar) + 14px);
+  display:flex;flex-direction:column;gap:10px;z-index:90;
+}
+.fab{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);border:none;
+}
+.fab:active{transform:scale(.88)}
+#fab-undo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-redo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-color{background:var(--accent);color:#fff;width:52px;height:52px}
+
+/* ===== SLIDE-UP PANELS ===== */
+.panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:none;opacity:0;transition:opacity .25s;
+}
+.panel-overlay.show{display:block;opacity:1}
+.slide-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:201;
+  background:var(--panel);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.slide-panel.show{transform:translateY(0)}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 4px}
+.panel-header{padding:8px 20px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:16px;font-weight:600}
+.panel-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.panel-body{padding:0 16px 16px}
+
+/* Color panel */
+#color-grid-mob{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:14px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch:active{transform:scale(.85)}
+.color-swatch.active{border-color:#fff}
+.cur-colors-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#fg-color,#bg-color{width:44px;height:44px;border-radius:10px;border:2px solid var(--border);cursor:pointer}
+.swap-btn{padding:8px 14px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.swap-btn:active{background:var(--hover)}
+#custom-color-mob{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px}
+
+/* Brush panel sliders */
+.slider-group{margin-bottom:16px}
+.slider-group label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-group label span{color:var(--accent);font-weight:600}
+.slider-group input[type=range]{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:var(--border);outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--panel)}
+
+/* Grid buttons */
+.grid-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.gbtn{padding:12px 6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+.gbtn:active{transform:scale(.92)}
+.gbtn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+
+/* Select boxes */
+select.mob-select{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:'Outfit',sans-serif}
+
+/* Layers */
+.layer-mob{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.layer-mob.active{border-color:var(--accent);background:var(--active)}
+.layer-mob-thumb{width:36px;height:28px;border-radius:5px;background:repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/8px 8px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-mob-thumb canvas{width:100%;height:100%}
+.layer-mob-name{flex:1;font-size:13px}
+.layer-mob-vis{font-size:18px;cursor:pointer;padding:4px}
+.layer-mob-del{font-size:16px;color:var(--accent2);cursor:pointer;padding:4px}
+.layer-actions-mob{display:flex;gap:8px;margin-top:10px}
+.layer-action-mob{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center}
+.layer-action-mob:active{background:var(--hover)}
+
+/* Filters grid */
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.filter-mob-btn{padding:12px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;display:flex;align-items:center;gap:8px}
+.filter-mob-btn:active{background:var(--hover);transform:scale(.96)}
+
+/* Zoom indicator */
+#zoom-badge{
+  position:fixed;left:14px;bottom:calc(var(--bottombar) + 14px);
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);
+  z-index:90;font-weight:600;
+}
+
+/* More menu */
+.more-menu{
+  position:fixed;bottom:calc(var(--bottombar)+8px);right:72px;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:6px;z-index:300;display:none;min-width:180px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.more-menu.show{display:block}
+.more-item{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.more-item:active{background:var(--hover);color:var(--text)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%}
+.modal-sheet h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-row label{font-size:13px;color:var(--text2);width:80px}
+.modal-row input,.modal-row select{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;border:none;font-family:'Outfit',sans-serif;text-align:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--topbar)+12px);left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 18px;font-size:13px;color:var(--text);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* Pinch hint */
+#pinch-hint{position:fixed;bottom:calc(var(--bottombar)+80px);left:50%;transform:translateX(-50%);background:rgba(108,99,255,.85);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:89;opacity:0;transition:opacity .5s;pointer-events:none}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div id="app-title">CanvasPro</div>
+  <div class="top-btn" onclick="showPanel('layers-panel')" title="Layers">🗂️</div>
+  <div class="top-btn" onclick="showPanel('filters-panel')" title="Filters">✨</div>
+  <div class="top-btn" onclick="toggleMoreMenu()" id="more-btn">⋯</div>
+  <div class="top-btn accent" onclick="exportImage()">Save</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container">
+  <div id="canvas-wrapper">
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-main"></canvas>
+    <canvas id="canvas-overlay"></canvas>
+    <div id="text-input-container"><div id="text-input" contenteditable="true" spellcheck="false"></div></div>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<!-- FABs -->
+<div id="fab-row">
+  <div class="fab" id="fab-redo" onclick="redoAction()">↪</div>
+  <div class="fab" id="fab-undo" onclick="undoAction()">↩</div>
+  <div class="fab" id="fab-color" onclick="showPanel('color-panel')">🎨</div>
+</div>
+
+<!-- Zoom Badge -->
+<div id="zoom-badge">100%</div>
+
+<!-- Bottom Toolbar -->
+<div id="bottombar">
+  <div class="tool-btn active" id="t-pen" onclick="setTool('pen')">✏️<span>Pen</span></div>
+  <div class="tool-btn" id="t-brush" onclick="setTool('brush')">🖌️<span>Brush</span></div>
+  <div class="tool-btn" id="t-eraser" onclick="setTool('eraser')">🧹<span>Erase</span></div>
+  <div class="tool-btn" id="t-fill" onclick="setTool('fill')">🪣<span>Fill</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-line" onclick="setTool('line')">╱<span>Line</span></div>
+  <div class="tool-btn" id="t-rect" onclick="setTool('rect')">⬜<span>Rect</span></div>
+  <div class="tool-btn" id="t-ellipse" onclick="setTool('ellipse')">⭕<span>Oval</span></div>
+  <div class="tool-btn" id="t-triangle" onclick="setTool('triangle')">△<span>Tri</span></div>
+  <div class="tool-btn" id="t-arrow" onclick="setTool('arrow')">→<span>Arrow</span></div>
+  <div class="tool-btn" id="t-star" onclick="setTool('star')">⭐<span>Star</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-text" onclick="setTool('text')">T<span>Text</span></div>
+  <div class="tool-btn" id="t-eyedrop" onclick="setTool('eyedrop')">💉<span>Pick</span></div>
+  <div class="tool-btn" id="t-select" onclick="setTool('select')">⬚<span>Select</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" onclick="showPanel('brush-panel')">⚙️<span>Options</span></div>
+</div>
+
+<!-- More Menu -->
+<div class="more-menu" id="more-menu">
+  <div class="more-item" onclick="showNew();closeMoreMenu()">📄 New Canvas</div>
+  <div class="more-item" onclick="openFile();closeMoreMenu()">📂 Open Image</div>
+  <div class="more-item" onclick="selectAll();closeMoreMenu()">⬜ Select All</div>
+  <div class="more-item" onclick="clearCanvas();closeMoreMenu()">🗑️ Clear Layer</div>
+  <div class="more-item" onclick="flipH();closeMoreMenu()">↔️ Flip H</div>
+  <div class="more-item" onclick="flipV();closeMoreMenu()">↕️ Flip V</div>
+  <div class="more-item" onclick="rotateCanvas();closeMoreMenu()">🔄 Rotate 90°</div>
+</div>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+<!-- COLOR PANEL -->
+<div class="slide-panel" id="color-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🎨 Colors</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="cur-colors-row">
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Foreground</div>
+        <div id="fg-color" onclick="document.getElementById('fg-picker').click()"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Background</div>
+        <div id="bg-color" onclick="document.getElementById('bg-picker').click()"></div>
+      </div>
+      <div class="swap-btn" onclick="swapColors()">⇆ Swap</div>
+    </div>
+    <input type="color" id="fg-picker" style="display:none" oninput="setFgColor(this.value)">
+    <input type="color" id="bg-picker" style="display:none" oninput="setBgColor(this.value)">
+    <div id="color-grid-mob"></div>
+    <input type="color" id="custom-color-mob" title="Custom" oninput="setFgColor(this.value)">
+  </div>
+</div>
+
+<!-- BRUSH PANEL -->
+<div class="slide-panel" id="brush-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>⚙️ Brush & Shape Options</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="slider-group">
+      <label>Size <span id="bsv">5</span>px</label>
+      <input type="range" id="brush-size" min="1" max="100" value="5" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Opacity <span id="bov">100</span>%</label>
+      <input type="range" id="brush-opacity" min="1" max="100" value="100" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Hardness <span id="bhv">80</span>%</label>
+      <input type="range" id="brush-hardness" min="0" max="100" value="80" oninput="updateBrush()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Blend Mode</div>
+    <select id="blend-mode" class="mob-select" onchange="updateBlend()">
+      <option value="source-over">Normal</option><option value="multiply">Multiply</option>
+      <option value="screen">Screen</option><option value="overlay">Overlay</option>
+      <option value="darken">Darken</option><option value="lighten">Lighten</option>
+      <option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+      <option value="difference">Difference</option><option value="exclusion">Exclusion</option>
+    </select>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Shape Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="shape-stroke" onclick="setShapeStyle('stroke')">⬡ Stroke</div>
+      <div class="gbtn" id="shape-fill" onclick="setShapeStyle('fill')">⬢ Fill</div>
+      <div class="gbtn" id="shape-both" onclick="setShapeStyle('both')">◼ Both</div>
+    </div>
+    <div class="slider-group">
+      <label>Stroke W <span id="swv">2</span>px</label>
+      <input type="range" id="stroke-width" min="1" max="30" value="2" oninput="updateStroke()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Line Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="ls-solid" onclick="setLineDash('solid')">— Solid</div>
+      <div class="gbtn" id="ls-dashed" onclick="setLineDash('dashed')">- - Dash</div>
+      <div class="gbtn" id="ls-dotted" onclick="setLineDash('dotted')">··· Dot</div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Text Settings</div>
+    <div class="slider-group">
+      <label>Font Size <span id="fsv">20</span>px</label>
+      <input type="range" id="font-size-slider" min="8" max="120" value="20" oninput="updateTextStyle()">
+    </div>
+    <select id="font-family" class="mob-select" onchange="updateTextStyle()">
+      <option>Arial</option><option>Georgia</option><option>Courier New</option>
+      <option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+      <option>Comic Sans MS</option><option selected>Outfit</option>
+    </select>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn" id="txt-bold" onclick="toggleTextBold()" style="font-weight:700">B Bold</div>
+      <div class="gbtn" id="txt-italic" onclick="toggleTextItalic()" style="font-style:italic">I Italic</div>
+      <div class="gbtn" id="txt-under" onclick="toggleTextUnder()" style="text-decoration:underline">U Under</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERS PANEL -->
+<div class="slide-panel" id="layers-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🗂️ Layers</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div id="layers-list-mob"></div>
+    <div class="layer-actions-mob">
+      <div class="layer-action-mob" onclick="addLayer()">+ Add</div>
+      <div class="layer-action-mob" onclick="duplicateLayer()">⧉ Dup</div>
+      <div class="layer-action-mob" onclick="mergeDown()">↓ Merge</div>
+      <div class="layer-action-mob" onclick="deleteLayer()">✕ Del</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div class="slide-panel" id="filters-panel">
+  <div class="panel-handl<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<title>CanvasPro Mobile - Fixed</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f13;--panel:#1a1a22;--panel2:#22222e;--border:#2e2e3e;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8d8;
+  --text:#e8e8f0;--text2:#9090a8;--hover:#2a2a38;--active:#6c63ff28;
+  --radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px);
+  --topbar:52px;--bottombar:68px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text)}
+
+/* ===== TOP BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:100;
+}
+#app-title{font-size:16px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.top-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.top-btn:active{background:var(--hover);transform:scale(.92)}
+.top-btn.accent{background:var(--accent);color:#fff;font-size:14px;width:auto;padding:0 14px;font-weight:600}
+
+/* ===== CANVAS AREA - FIXED ===== */
+#canvas-container{
+  position:fixed;top:var(--topbar);left:0;right:0;
+  bottom:var(--bottombar);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a1a28 0%,#0f0f13 100%);
+  touch-action:none;
+}
+#canvas-wrapper{
+  position:relative;
+  border-radius:4px;
+  box-shadow:0 0 0 1px var(--border),0 8px 40px rgba(0,0,0,.7);
+}
+#canvas-wrapper canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  border-radius:4px;
+}
+/* FIX: overlay should capture touches */
+#canvas-overlay{
+  pointer-events: auto !important;
+  z-index: 20;
+  cursor: crosshair;
+}
+#selection-box{
+  position:absolute;
+  border:2px dashed var(--accent);
+  background:rgba(108,99,255,.08);
+  pointer-events:none;
+  display:none;
+  z-index:25;
+  border-radius:2px;
+}
+#text-input-container{position:absolute;display:none;z-index:50}
+#text-input{background:rgba(0,0,0,.2);border:2px dashed var(--accent);outline:none;color:#fff;font-size:20px;min-width:80px;min-height:30px;padding:4px;border-radius:4px;white-space:pre;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ===== BOTTOM TOOL BAR ===== */
+#bottombar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--bottombar) + var(--safe-bottom));
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;padding-bottom:var(--safe-bottom);
+  gap:2px;z-index:100;overflow-x:auto;overflow-y:hidden;
+}
+#bottombar::-webkit-scrollbar{display:none}
+.tool-btn{
+  min-width:52px;height:52px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);font-size:20px;transition:all .15s;
+  border:1.5px solid transparent;flex-shrink:0;gap:2px;
+}
+.tool-btn span{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.tool-btn:active{transform:scale(.88)}
+.tool-btn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+.tool-btn.active span{color:var(--accent)}
+.tool-sep-v{width:1px;height:36px;background:var(--border);margin:0 3px;flex-shrink:0}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+#fab-row{
+  position:fixed;right:14px;bottom:calc(var(--bottombar) + 14px);
+  display:flex;flex-direction:column;gap:10px;z-index:90;
+}
+.fab{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);border:none;
+}
+.fab:active{transform:scale(.88)}
+#fab-undo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-redo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-color{background:var(--accent);color:#fff;width:52px;height:52px}
+
+/* ===== SLIDE-UP PANELS ===== */
+.panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:none;opacity:0;transition:opacity .25s;
+}
+.panel-overlay.show{display:block;opacity:1}
+.slide-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:201;
+  background:var(--panel);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.slide-panel.show{transform:translateY(0)}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 4px}
+.panel-header{padding:8px 20px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:16px;font-weight:600}
+.panel-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.panel-body{padding:0 16px 16px}
+
+/* Color panel */
+#color-grid-mob{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:14px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch:active{transform:scale(.85)}
+.color-swatch.active{border-color:#fff}
+.cur-colors-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#fg-color,#bg-color{width:44px;height:44px;border-radius:10px;border:2px solid var(--border);cursor:pointer}
+.swap-btn{padding:8px 14px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.swap-btn:active{background:var(--hover)}
+#custom-color-mob{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px}
+
+/* Brush panel sliders */
+.slider-group{margin-bottom:16px}
+.slider-group label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-group label span{color:var(--accent);font-weight:600}
+.slider-group input[type=range]{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:var(--border);outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--panel)}
+
+/* Grid buttons */
+.grid-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.gbtn{padding:12px 6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+.gbtn:active{transform:scale(.92)}
+.gbtn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+
+/* Select boxes */
+select.mob-select{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:'Outfit',sans-serif}
+
+/* Layers */
+.layer-mob{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.layer-mob.active{border-color:var(--accent);background:var(--active)}
+.layer-mob-thumb{width:36px;height:28px;border-radius:5px;background:repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/8px 8px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-mob-thumb canvas{width:100%;height:100%}
+.layer-mob-name{flex:1;font-size:13px}
+.layer-mob-vis{font-size:18px;cursor:pointer;padding:4px}
+.layer-mob-del{font-size:16px;color:var(--accent2);cursor:pointer;padding:4px}
+.layer-actions-mob{display:flex;gap:8px;margin-top:10px}
+.layer-action-mob{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center}
+.layer-action-mob:active{background:var(--hover)}
+
+/* Filters grid */
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.filter-mob-btn{padding:12px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;display:flex;align-items:center;gap:8px}
+.filter-mob-btn:active{background:var(--hover);transform:scale(.96)}
+
+/* Zoom indicator */
+#zoom-badge{
+  position:fixed;left:14px;bottom:calc(var(--bottombar) + 14px);
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);
+  z-index:90;font-weight:600;
+}
+
+/* More menu */
+.more-menu{
+  position:fixed;bottom:calc(var(--bottombar)+8px);right:72px;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:6px;z-index:300;display:none;min-width:180px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.more-menu.show{display:block}
+.more-item{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.more-item:active{background:var(--hover);color:var(--text)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%}
+.modal-sheet h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-row label{font-size:13px;color:var(--text2);width:80px}
+.modal-row input,.modal-row select{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;border:none;font-family:'Outfit',sans-serif;text-align:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--topbar)+12px);left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 18px;font-size:13px;color:var(--text);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* Pinch hint */
+#pinch-hint{position:fixed;bottom:calc(var(--bottombar)+80px);left:50%;transform:translateX(-50%);background:rgba(108,99,255,.85);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:89;opacity:0;transition:opacity .5s;pointer-events:none}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div id="app-title">CanvasPro</div>
+  <div class="top-btn" onclick="showPanel('layers-panel')" title="Layers">🗂️</div>
+  <div class="top-btn" onclick="showPanel('filters-panel')" title="Filters">✨</div>
+  <div class="top-btn" onclick="toggleMoreMenu()" id="more-btn">⋯</div>
+  <div class="top-btn accent" onclick="exportImage()">Save</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container">
+  <div id="canvas-wrapper">
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-main"></canvas>
+    <canvas id="canvas-overlay"></canvas>
+    <div id="text-input-container"><div id="text-input" contenteditable="true" spellcheck="false"></div></div>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<!-- FABs -->
+<div id="fab-row">
+  <div class="fab" id="fab-redo" onclick="redoAction()">↪</div>
+  <div class="fab" id="fab-undo" onclick="undoAction()">↩</div>
+  <div class="fab" id="fab-color" onclick="showPanel('color-panel')">🎨</div>
+</div>
+
+<!-- Zoom Badge -->
+<div id="zoom-badge">100%</div>
+
+<!-- Bottom Toolbar -->
+<div id="bottombar">
+  <div class="tool-btn active" id="t-pen" onclick="setTool('pen')">✏️<span>Pen</span></div>
+  <div class="tool-btn" id="t-brush" onclick="setTool('brush')">🖌️<span>Brush</span></div>
+  <div class="tool-btn" id="t-eraser" onclick="setTool('eraser')">🧹<span>Erase</span></div>
+  <div class="tool-btn" id="t-fill" onclick="setTool('fill')">🪣<span>Fill</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-line" onclick="setTool('line')">╱<span>Line</span></div>
+  <div class="tool-btn" id="t-rect" onclick="setTool('rect')">⬜<span>Rect</span></div>
+  <div class="tool-btn" id="t-ellipse" onclick="setTool('ellipse')">⭕<span>Oval</span></div>
+  <div class="tool-btn" id="t-triangle" onclick="setTool('triangle')">△<span>Tri</span></div>
+  <div class="tool-btn" id="t-arrow" onclick="setTool('arrow')">→<span>Arrow</span></div>
+  <div class="tool-btn" id="t-star" onclick="setTool('star')">⭐<span>Star</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-text" onclick="setTool('text')">T<span>Text</span></div>
+  <div class="tool-btn" id="t-eyedrop" onclick="setTool('eyedrop')">💉<span>Pick</span></div>
+  <div class="tool-btn" id="t-select" onclick="setTool('select')">⬚<span>Select</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" onclick="showPanel('brush-panel')">⚙️<span>Options</span></div>
+</div>
+
+<!-- More Menu -->
+<div class="more-menu" id="more-menu">
+  <div class="more-item" onclick="showNew();closeMoreMenu()">📄 New Canvas</div>
+  <div class="more-item" onclick="openFile();closeMoreMenu()">📂 Open Image</div>
+  <div class="more-item" onclick="selectAll();closeMoreMenu()">⬜ Select All</div>
+  <div class="more-item" onclick="clearCanvas();closeMoreMenu()">🗑️ Clear Layer</div>
+  <div class="more-item" onclick="flipH();closeMoreMenu()">↔️ Flip H</div>
+  <div class="more-item" onclick="flipV();closeMoreMenu()">↕️ Flip V</div>
+  <div class="more-item" onclick="rotateCanvas();closeMoreMenu()">🔄 Rotate 90°</div>
+</div>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+<!-- COLOR PANEL -->
+<div class="slide-panel" id="color-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🎨 Colors</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="cur-colors-row">
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Foreground</div>
+        <div id="fg-color" onclick="document.getElementById('fg-picker').click()"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Background</div>
+        <div id="bg-color" onclick="document.getElementById('bg-picker').click()"></div>
+      </div>
+      <div class="swap-btn" onclick="swapColors()">⇆ Swap</div>
+    </div>
+    <input type="color" id="fg-picker" style="display:none" oninput="setFgColor(this.value)">
+    <input type="color" id="bg-picker" style="display:none" oninput="setBgColor(this.value)">
+    <div id="color-grid-mob"></div>
+    <input type="color" id="custom-color-mob" title="Custom" oninput="setFgColor(this.value)">
+  </div>
+</div>
+
+<!-- BRUSH PANEL -->
+<div class="slide-panel" id="brush-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>⚙️ Brush & Shape Options</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="slider-group">
+      <label>Size <span id="bsv">5</span>px</label>
+      <input type="range" id="brush-size" min="1" max="100" value="5" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Opacity <span id="bov">100</span>%</label>
+      <input type="range" id="brush-opacity" min="1" max="100" value="100" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Hardness <span id="bhv">80</span>%</label>
+      <input type="range" id="brush-hardness" min="0" max="100" value="80" oninput="updateBrush()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Blend Mode</div>
+    <select id="blend-mode" class="mob-select" onchange="updateBlend()">
+      <option value="source-over">Normal</option><option value="multiply">Multiply</option>
+      <option value="screen">Screen</option><option value="overlay">Overlay</option>
+      <option value="darken">Darken</option><option value="lighten">Lighten</option>
+      <option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+      <option value="difference">Difference</option><option value="exclusion">Exclusion</option>
+    </select>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Shape Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="shape-stroke" onclick="setShapeStyle('stroke')">⬡ Stroke</div>
+      <div class="gbtn" id="shape-fill" onclick="setShapeStyle('fill')">⬢ Fill</div>
+      <div class="gbtn" id="shape-both" onclick="setShapeStyle('both')">◼ Both</div>
+    </div>
+    <div class="slider-group">
+      <label>Stroke W <span id="swv">2</span>px</label>
+      <input type="range" id="stroke-width" min="1" max="30" value="2" oninput="updateStroke()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Line Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="ls-solid" onclick="setLineDash('solid')">— Solid</div>
+      <div class="gbtn" id="ls-dashed" onclick="setLineDash('dashed')">- - Dash</div>
+      <div class="gbtn" id="ls-dotted" onclick="setLineDash('dotted')">··· Dot</div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Text Settings</div>
+    <div class="slider-group">
+      <label>Font Size <span id="fsv">20</span>px</label>
+      <input type="range" id="font-size-slider" min="8" max="120" value="20" oninput="updateTextStyle()">
+    </div>
+    <select id="font-family" class="mob-select" onchange="updateTextStyle()">
+      <option>Arial</option><option>Georgia</option><option>Courier New</option>
+      <option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+      <option>Comic Sans MS</option><option selected>Outfit</option>
+    </select>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn" id="txt-bold" onclick="toggleTextBold()" style="font-weight:700">B Bold</div>
+      <div class="gbtn" id="txt-italic" onclick="toggleTextItalic()" style="font-style:italic">I Italic</div>
+      <div class="gbtn" id="txt-under" onclick="toggleTextUnder()" style="text-decoration:underline">U Under</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERS PANEL -->
+<div class="slide-panel" id="layers-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🗂️ Layers</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div id="layers-list-mob"></div>
+    <div class="layer-actions-mob">
+      <div class="layer-action-mob" onclick="addLayer()">+ Add</div>
+      <div class="layer-action-mob" onclick="duplicateLayer()">⧉ Dup</div>
+      <div class="layer-action-mob" onclick="mergeDown()">↓ Merge</div>
+      <div class="layer-action-mob" onclick="deleteLayer()">✕ Del</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div class="slide-panel" id="filters-panel">
+  <div class="panel-handl<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<title>CanvasPro Mobile - Fixed</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f13;--panel:#1a1a22;--panel2:#22222e;--border:#2e2e3e;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8d8;
+  --text:#e8e8f0;--text2:#9090a8;--hover:#2a2a38;--active:#6c63ff28;
+  --radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px);
+  --topbar:52px;--bottombar:68px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text)}
+
+/* ===== TOP BAR ===== */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:100;
+}
+#app-title{font-size:16px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.top-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.top-btn:active{background:var(--hover);transform:scale(.92)}
+.top-btn.accent{background:var(--accent);color:#fff;font-size:14px;width:auto;padding:0 14px;font-weight:600}
+
+/* ===== CANVAS AREA - FIXED ===== */
+#canvas-container{
+  position:fixed;top:var(--topbar);left:0;right:0;
+  bottom:var(--bottombar);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a1a28 0%,#0f0f13 100%);
+  touch-action:none;
+}
+#canvas-wrapper{
+  position:relative;
+  border-radius:4px;
+  box-shadow:0 0 0 1px var(--border),0 8px 40px rgba(0,0,0,.7);
+}
+#canvas-wrapper canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  border-radius:4px;
+}
+/* FIX: overlay should capture touches */
+#canvas-overlay{
+  pointer-events: auto !important;
+  z-index: 20;
+  cursor: crosshair;
+}
+#selection-box{
+  position:absolute;
+  border:2px dashed var(--accent);
+  background:rgba(108,99,255,.08);
+  pointer-events:none;
+  display:none;
+  z-index:25;
+  border-radius:2px;
+}
+#text-input-container{position:absolute;display:none;z-index:50}
+#text-input{background:rgba(0,0,0,.2);border:2px dashed var(--accent);outline:none;color:#fff;font-size:20px;min-width:80px;min-height:30px;padding:4px;border-radius:4px;white-space:pre;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ===== BOTTOM TOOL BAR ===== */
+#bottombar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--bottombar) + var(--safe-bottom));
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;padding-bottom:var(--safe-bottom);
+  gap:2px;z-index:100;overflow-x:auto;overflow-y:hidden;
+}
+#bottombar::-webkit-scrollbar{display:none}
+.tool-btn{
+  min-width:52px;height:52px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);font-size:20px;transition:all .15s;
+  border:1.5px solid transparent;flex-shrink:0;gap:2px;
+}
+.tool-btn span{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.tool-btn:active{transform:scale(.88)}
+.tool-btn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+.tool-btn.active span{color:var(--accent)}
+.tool-sep-v{width:1px;height:36px;background:var(--border);margin:0 3px;flex-shrink:0}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+#fab-row{
+  position:fixed;right:14px;bottom:calc(var(--bottombar) + 14px);
+  display:flex;flex-direction:column;gap:10px;z-index:90;
+}
+.fab{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);border:none;
+}
+.fab:active{transform:scale(.88)}
+#fab-undo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-redo{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+#fab-color{background:var(--accent);color:#fff;width:52px;height:52px}
+
+/* ===== SLIDE-UP PANELS ===== */
+.panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:none;opacity:0;transition:opacity .25s;
+}
+.panel-overlay.show{display:block;opacity:1}
+.slide-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:201;
+  background:var(--panel);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.slide-panel.show{transform:translateY(0)}
+.panel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 4px}
+.panel-header{padding:8px 20px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:16px;font-weight:600}
+.panel-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.panel-body{padding:0 16px 16px}
+
+/* Color panel */
+#color-grid-mob{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:14px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch:active{transform:scale(.85)}
+.color-swatch.active{border-color:#fff}
+.cur-colors-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#fg-color,#bg-color{width:44px;height:44px;border-radius:10px;border:2px solid var(--border);cursor:pointer}
+.swap-btn{padding:8px 14px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.swap-btn:active{background:var(--hover)}
+#custom-color-mob{width:100%;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px}
+
+/* Brush panel sliders */
+.slider-group{margin-bottom:16px}
+.slider-group label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-group label span{color:var(--accent);font-weight:600}
+.slider-group input[type=range]{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:var(--border);outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--panel)}
+
+/* Grid buttons */
+.grid-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.gbtn{padding:12px 6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+.gbtn:active{transform:scale(.92)}
+.gbtn.active{background:var(--active);color:var(--accent);border-color:var(--accent)}
+
+/* Select boxes */
+select.mob-select{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:'Outfit',sans-serif}
+
+/* Layers */
+.layer-mob{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.layer-mob.active{border-color:var(--accent);background:var(--active)}
+.layer-mob-thumb{width:36px;height:28px;border-radius:5px;background:repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/8px 8px;border:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.layer-mob-thumb canvas{width:100%;height:100%}
+.layer-mob-name{flex:1;font-size:13px}
+.layer-mob-vis{font-size:18px;cursor:pointer;padding:4px}
+.layer-mob-del{font-size:16px;color:var(--accent2);cursor:pointer;padding:4px}
+.layer-actions-mob{display:flex;gap:8px;margin-top:10px}
+.layer-action-mob{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center}
+.layer-action-mob:active{background:var(--hover)}
+
+/* Filters grid */
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.filter-mob-btn{padding:12px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;text-align:center;display:flex;align-items:center;gap:8px}
+.filter-mob-btn:active{background:var(--hover);transform:scale(.96)}
+
+/* Zoom indicator */
+#zoom-badge{
+  position:fixed;left:14px;bottom:calc(var(--bottombar) + 14px);
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);
+  z-index:90;font-weight:600;
+}
+
+/* More menu */
+.more-menu{
+  position:fixed;bottom:calc(var(--bottombar)+8px);right:72px;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:6px;z-index:300;display:none;min-width:180px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.more-menu.show{display:block}
+.more-item{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.more-item:active{background:var(--hover);color:var(--text)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%}
+.modal-sheet h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-row label{font-size:13px;color:var(--text2);width:80px}
+.modal-row input,.modal-row select{flex:1;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;border:none;font-family:'Outfit',sans-serif;text-align:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--text2);border:1px solid var(--border)}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--topbar)+12px);left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 18px;font-size:13px;color:var(--text);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* Pinch hint */
+#pinch-hint{position:fixed;bottom:calc(var(--bottombar)+80px);left:50%;transform:translateX(-50%);background:rgba(108,99,255,.85);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:89;opacity:0;transition:opacity .5s;pointer-events:none}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div id="app-title">CanvasPro</div>
+  <div class="top-btn" onclick="showPanel('layers-panel')" title="Layers">🗂️</div>
+  <div class="top-btn" onclick="showPanel('filters-panel')" title="Filters">✨</div>
+  <div class="top-btn" onclick="toggleMoreMenu()" id="more-btn">⋯</div>
+  <div class="top-btn accent" onclick="exportImage()">Save</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container">
+  <div id="canvas-wrapper">
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-main"></canvas>
+    <canvas id="canvas-overlay"></canvas>
+    <div id="text-input-container"><div id="text-input" contenteditable="true" spellcheck="false"></div></div>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<!-- FABs -->
+<div id="fab-row">
+  <div class="fab" id="fab-redo" onclick="redoAction()">↪</div>
+  <div class="fab" id="fab-undo" onclick="undoAction()">↩</div>
+  <div class="fab" id="fab-color" onclick="showPanel('color-panel')">🎨</div>
+</div>
+
+<!-- Zoom Badge -->
+<div id="zoom-badge">100%</div>
+
+<!-- Bottom Toolbar -->
+<div id="bottombar">
+  <div class="tool-btn active" id="t-pen" onclick="setTool('pen')">✏️<span>Pen</span></div>
+  <div class="tool-btn" id="t-brush" onclick="setTool('brush')">🖌️<span>Brush</span></div>
+  <div class="tool-btn" id="t-eraser" onclick="setTool('eraser')">🧹<span>Erase</span></div>
+  <div class="tool-btn" id="t-fill" onclick="setTool('fill')">🪣<span>Fill</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-line" onclick="setTool('line')">╱<span>Line</span></div>
+  <div class="tool-btn" id="t-rect" onclick="setTool('rect')">⬜<span>Rect</span></div>
+  <div class="tool-btn" id="t-ellipse" onclick="setTool('ellipse')">⭕<span>Oval</span></div>
+  <div class="tool-btn" id="t-triangle" onclick="setTool('triangle')">△<span>Tri</span></div>
+  <div class="tool-btn" id="t-arrow" onclick="setTool('arrow')">→<span>Arrow</span></div>
+  <div class="tool-btn" id="t-star" onclick="setTool('star')">⭐<span>Star</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" id="t-text" onclick="setTool('text')">T<span>Text</span></div>
+  <div class="tool-btn" id="t-eyedrop" onclick="setTool('eyedrop')">💉<span>Pick</span></div>
+  <div class="tool-btn" id="t-select" onclick="setTool('select')">⬚<span>Select</span></div>
+  <div class="tool-sep-v"></div>
+  <div class="tool-btn" onclick="showPanel('brush-panel')">⚙️<span>Options</span></div>
+</div>
+
+<!-- More Menu -->
+<div class="more-menu" id="more-menu">
+  <div class="more-item" onclick="showNew();closeMoreMenu()">📄 New Canvas</div>
+  <div class="more-item" onclick="openFile();closeMoreMenu()">📂 Open Image</div>
+  <div class="more-item" onclick="selectAll();closeMoreMenu()">⬜ Select All</div>
+  <div class="more-item" onclick="clearCanvas();closeMoreMenu()">🗑️ Clear Layer</div>
+  <div class="more-item" onclick="flipH();closeMoreMenu()">↔️ Flip H</div>
+  <div class="more-item" onclick="flipV();closeMoreMenu()">↕️ Flip V</div>
+  <div class="more-item" onclick="rotateCanvas();closeMoreMenu()">🔄 Rotate 90°</div>
+</div>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+<!-- COLOR PANEL -->
+<div class="slide-panel" id="color-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🎨 Colors</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="cur-colors-row">
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Foreground</div>
+        <div id="fg-color" onclick="document.getElementById('fg-picker').click()"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Background</div>
+        <div id="bg-color" onclick="document.getElementById('bg-picker').click()"></div>
+      </div>
+      <div class="swap-btn" onclick="swapColors()">⇆ Swap</div>
+    </div>
+    <input type="color" id="fg-picker" style="display:none" oninput="setFgColor(this.value)">
+    <input type="color" id="bg-picker" style="display:none" oninput="setBgColor(this.value)">
+    <div id="color-grid-mob"></div>
+    <input type="color" id="custom-color-mob" title="Custom" oninput="setFgColor(this.value)">
+  </div>
+</div>
+
+<!-- BRUSH PANEL -->
+<div class="slide-panel" id="brush-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>⚙️ Brush & Shape Options</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div class="slider-group">
+      <label>Size <span id="bsv">5</span>px</label>
+      <input type="range" id="brush-size" min="1" max="100" value="5" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Opacity <span id="bov">100</span>%</label>
+      <input type="range" id="brush-opacity" min="1" max="100" value="100" oninput="updateBrush()">
+    </div>
+    <div class="slider-group">
+      <label>Hardness <span id="bhv">80</span>%</label>
+      <input type="range" id="brush-hardness" min="0" max="100" value="80" oninput="updateBrush()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Blend Mode</div>
+    <select id="blend-mode" class="mob-select" onchange="updateBlend()">
+      <option value="source-over">Normal</option><option value="multiply">Multiply</option>
+      <option value="screen">Screen</option><option value="overlay">Overlay</option>
+      <option value="darken">Darken</option><option value="lighten">Lighten</option>
+      <option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+      <option value="difference">Difference</option><option value="exclusion">Exclusion</option>
+    </select>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Shape Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="shape-stroke" onclick="setShapeStyle('stroke')">⬡ Stroke</div>
+      <div class="gbtn" id="shape-fill" onclick="setShapeStyle('fill')">⬢ Fill</div>
+      <div class="gbtn" id="shape-both" onclick="setShapeStyle('both')">◼ Both</div>
+    </div>
+    <div class="slider-group">
+      <label>Stroke W <span id="swv">2</span>px</label>
+      <input type="range" id="stroke-width" min="1" max="30" value="2" oninput="updateStroke()">
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Line Style</div>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn active" id="ls-solid" onclick="setLineDash('solid')">— Solid</div>
+      <div class="gbtn" id="ls-dashed" onclick="setLineDash('dashed')">- - Dash</div>
+      <div class="gbtn" id="ls-dotted" onclick="setLineDash('dotted')">··· Dot</div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">Text Settings</div>
+    <div class="slider-group">
+      <label>Font Size <span id="fsv">20</span>px</label>
+      <input type="range" id="font-size-slider" min="8" max="120" value="20" oninput="updateTextStyle()">
+    </div>
+    <select id="font-family" class="mob-select" onchange="updateTextStyle()">
+      <option>Arial</option><option>Georgia</option><option>Courier New</option>
+      <option>Times New Roman</option><option>Verdana</option><option>Impact</option>
+      <option>Comic Sans MS</option><option selected>Outfit</option>
+    </select>
+    <div class="grid-btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="gbtn" id="txt-bold" onclick="toggleTextBold()" style="font-weight:700">B Bold</div>
+      <div class="gbtn" id="txt-italic" onclick="toggleTextItalic()" style="font-style:italic">I Italic</div>
+      <div class="gbtn" id="txt-under" onclick="toggleTextUnder()" style="text-decoration:underline">U Under</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERS PANEL -->
+<div class="slide-panel" id="layers-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <h3>🗂️ Layers</h3>
+    <div class="panel-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="panel-body">
+    <div id="layers-list-mob"></div>
+    <div class="layer-actions-mob">
+      <div class="layer-action-mob" onclick="addLayer()">+ Add</div>
+      <div class="layer-action-mob" onclick="duplicateLayer()">⧉ Dup</div>
+      <div class="layer-action-mob" onclick="mergeDown()">↓ Merge</div>
+      <div class="layer-action-mob" onclick="deleteLayer()">✕ Del</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div class="slide-panel" id="filters-panel">
+  <div class="panel-handl
