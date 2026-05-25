@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1877f2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>समाज - Offline Social Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            background: #f0f2f5;
+            overflow-x: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #app {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #1877f2;
+            border-radius: 3px;
+        }
+
+        .logo {
+            padding: 20px 16px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1877f2;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #050505;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+            margin: 4px 0;
+        }
+
+        .nav-item:hover {
+            background: #f0f2f5;
+            border-left-color: #1877f2;
+        }
+
+        .nav-item.active {
+            background: #e7f3ff;
+            color: #1877f2;
+            border-left-color: #1877f2;
+        }
+
+        .nav-item span {
+            font-size: 1.2rem;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 12px 0;
+        }
+
+        /* ============ MAIN CONTENT ============ */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        .content-area::-webkit-scrollbar-thumb {
+            background: #1877f2;
+            border-radius: 4px;
+        }
+
+        .right-sidebar {
+            width: 300px;
+            background: white;
+            border-left: 1px solid #e5e7eb;
+            padding: 16px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .right-sidebar.show {
+            display: block;
+        }
+
+        /* ============ CARDS & COMPONENTS ============ */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1877f2 0%, #0a66c2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .avatar.large {
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+        }
+
+        .avatar.small {
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            font-weight: 700;
+            color: #050505;
+            cursor: pointer;
+        }
+
+        .user-name:hover {
+            color: #1877f2;
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            color: #65676b;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: #050505;
+            font-weight: 700;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #1877f2;
+            box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1877f2 0%, #0a66c2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f2f5;
+            color: #050505;
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #e4e6eb;
+        }
+
+        .btn-danger {
+            background: #f02849;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c41d34;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            background: none;
+            border: 1px solid #e5e7eb;
+            color: #065fd4;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: #f0f2f5;
+        }
+
+        /* ============ POST STYLES ============ */
+        .post {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .post-header {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .post-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .post-content {
+            padding: 0 16px 12px 16px;
+            line-height: 1.5;
+            color: #050505;
+            word-break: break-word;
+        }
+
+        .post-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            margin: 12px 0;
+        }
+
+        .post-image-container {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .post-stats {
+            padding: 8px 16px;
+            border-top: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #65676b;
+        }
+
+        .post-actions {
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            background: none;
+            border: none;
+            color: #65676b;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .action-btn:hover {
+            background: #f0f2f5;
+        }
+
+        .action-btn.liked {
+            color: #f02849;
+            font-weight: 700;
+        }
+
+        .comments-section {
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .comment {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .comment-content {
+            flex: 1;
+            background: #f0f2f5;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .comment-user {
+            font-weight: 700;
+            color: #050505;
+            cursor: pointer;
+        }
+
+        .comment-user:hover {
+            color: #1877f2;
+        }
+
+        .comment-text {
+            color: #050505;
+            font-size: 0.9rem;
+        }
+
+        .comment-time {
+            font-size: 0.75rem;
+            color: #65676b;
+            margin-top: 4px;
+        }
+
+        .comment-input {
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+        }
+
+        .comment-input input {
+            flex: 1;
+            margin: 0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .comment-input button {
+            width: auto;
+            padding: 8px 16px;
+            background: #1877f2;
+            color: white;
+            border-radius: 20px;
+            margin: 0;
+        }
+
+        /* ============ OFFLINE BANNER ============ */
+        .offline-banner {
+            background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+            color: #7f1d1d;
+            padding: 12px 16px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid #dc2626;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ============ PROFILE PAGE ============ */
+        .profile-header {
+            background: linear-gradient(135deg, #1877f2 0%, #0a66c2 100%);
+            color: white;
+            padding: 32px 16px;
+            text-align: center;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin: 0 auto 16px;
+        }
+
+        .profile-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .profile-info {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .profile-actions {
+            padding: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .profile-actions button {
+            flex: 1;
+        }
+
+        .profile-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #65676b;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #1877f2;
+            border-bottom-color: #1877f2;
+        }
+
+        /* ============ EMPTY STATES ============ */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #65676b;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .empty-title {
+            font-size: 1.3rem;
+            color: #050505;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        /* ============ MODALS ============ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #65676b;
+            width: auto;
+            padding: 0;
+            margin: 0;
+        }
+
+        .close-btn:hover {
+            color: #050505;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+
+            .main-content {
+                margin-left: 240px;
+            }
+
+            .right-sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                transition: width 0.3s;
+            }
+
+            .sidebar.open {
+                width: 240px;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .content-area {
+                max-width: 100%;
+            }
+
+            .logo-toggle {
+                display: block;
+            }
+
+            .post {
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 16px;
+            }
+        }
+
+        .logo-toggle {
+            display: none;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 16px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .status-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Offline Banner -->
+    <div id="offlineBanner" class="offline-banner hidden">
+        ⚠️ आप ऑफलाइन हैं - नई पोस्ट नहीं दिख सकती
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">समाज</div>
+        <div class="nav-item" onclick="showPage('home')" id="navHome">
+            <span>🏠</span>
+            <span>होम</span>
+        </div>
+        <div class="nav-item" onclick="showPage('profile')" id="navProfile">
+            <span>👤</span>
+            <span>प्रोफाइल</span>
+        </div>
+        <div class="nav-item" onclick="showPage('explore')" id="navExplore">
+            <span>🔍</span>
+            <span>खोजें</span>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="nav-item" id="userInfoNav" style="cursor: default;">
+            <span>ℹ️</span>
+            <span id="navUserName">लॉगिन करें</span>
+        </div>
+        <div class="nav-item" onclick="logout()" style="color: #f02849;">
+            <span>🚪</span>
+            <span>लॉगआउट</span>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="content-area" id="contentArea"></div>
+
+        <!-- Right Sidebar (Profile Preview) -->
+        <div class="right-sidebar" id="rightSidebar">
+            <h3>सुझाए गए प्रोफाइल्स</h3>
+            <div id="suggestedProfiles"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Setup Modal -->
+<div class="modal" id="setupModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            👋 समाज में आपका स्वागत है!
+            <button class="close-btn" onclick="closeModal('setupModal')">✕</button>
+        </div>
+
+        <p style="color: #65676b; margin-bottom: 16px;">एक यूनिक आइडेंटिटी बनाएं और शुरू करें</p>
+
+        <div id="setupError"></div>
+
+        <input type="text" id="setupUsername" placeholder="यूजरनेम" autocomplete="off">
+        <input type="tel" id="setupPhone" placeholder="फोन नंबर" autocomplete="off">
+        <input type="email" id="setupEmail" placeholder="ईमेल (वैकल्पिक)" autocomplete="off">
+
+        <button class="btn-primary" onclick="saveProfile()">शुरू करें 🚀</button>
+    </div>
+</div>
+
+<!-- View Profile Modal -->
+<div class="modal" id="profileModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>प्रोफाइल</span>
+            <button class="close-btn" onclick="closeModal('profileModal')">✕</button>
+        </div>
+        <div id="modalProfileContent"></div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+    // ============ STORAGE & STATE ============
+    const STORAGE_KEYS = {
+        USER: "social_user",
+        POSTS: "social_posts",
+        LIKES: "social_likes",
+        COMMENTS: "social_comments",
+        FOLLOWS: "social_follows"
+    };
+
+    let currentUser = null;
+    let allPosts = [];
+    let allLikes = {};
+    let allComments = {};
+    let allFollows = {};
+    let isOnline = navigator.onLine;
+    let currentPage = 'home';
+
+    // ============ UTILITIES ============
+    function generateUniqueId() {
+        return Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function getInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+
+    function formatTime(timestamp) {
+        const now = new Date();
+        const date = new Date(timestamp);
+        const diff = now - date;
+        
+        const mins = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (mins < 1) return 'अभी';
+        if (mins < 60) return `${mins}m पहले`;
+        if (hours < 24) return `${hours}h पहले`;
+        if (days < 7) return `${days}d पहले`;
+        return date.toLocaleDateString('hi-IN');
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ============ DATA MANAGEMENT ============
+    function loadData() {
+        const user = localStorage.getItem(STORAGE_KEYS.USER);
+        if (user) {
+            currentUser = JSON.parse(user);
+        }
+
+        allPosts = JSON.parse(localStorage.getItem(STORAGE_KEYS.POSTS) || '[]');
+        allLikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || '{}');
+        allComments = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMMENTS) || '{}');
+        allFollows = JSON.parse(localStorage.getItem(STORAGE_KEYS.FOLLOWS) || '{}');
+    }
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(allPosts));
+        localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(allLikes));
+        localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(allComments));
+        localStorage.setItem(STORAGE_KEYS.FOLLOWS, JSON.stringify(allFollows));
+    }
+
+    function saveProfile() {
+        const username = document.getElementById('setupUsername').value.trim();
+        const phone = document.getElementById('setupPhone').value.trim();
+        const email = document.getElementById('setupEmail').value.trim();
+
+        const errorDiv = document.getElementById('setupError');
+        errorDiv.innerHTML = '';
+
+        if (!username || !phone) {
+            errorDiv.innerHTML = '<div class="status-message status-error">यूजरनेम और फोन नंबर आवश्यक है</div>';
+            return;
+        }
+
+        if (phone.length < 10) {
+            errorDiv.innerHTML = '<div class="status-message status-error">वैध फोन नंबर दर्ज करें</div>';
+            return;
+        }
+
+        currentUser = {
+            id: generateUniqueId(),
+            username: username,
+            phone: phone,
+            email: email,
+            avatar: getInitials(username),
+            bio: '',
+            createdAt: new Date().toISOString(),
+            joinedAt: new Date().toLocaleString('hi-IN')
+        };
+
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser));
+        closeModal('setupModal');
+        updateUI();
+        showPage('home');
+    }
+
+    function logout() {
+        if (confirm('आप सुनिश्चित हैं?')) {
+            localStorage.clear();
+            currentUser = null;
+            allPosts = [];
+            allLikes = {};
+            allComments = {};
+            allFollows = {};
+            updateUI();
+        }
+    }
+
+    // ============ UI UPDATE ============
+    function updateUI() {
+        if (!currentUser) {
+            document.getElementById('setupModal').classList.add('show');
+            document.getElementById('navUserName').textContent = 'लॉगिन करें';
+            document.getElementById('userInfoNav').style.opacity = '0.5';
+        } else {
+            document.getElementById('setupModal').classList.remove('show');
+            document.getElementById('navUserName').textContent = currentUser.username;
+            document.getElementById('userInfoNav').style.opacity = '1';
+        }
+
+        if (!isOnline) {
+            document.getElementById('offlineBanner').classList.remove('hidden');
+        } else {
+            document.getElementById('offlineBanner').classList.add('hidden');
+        }
+    }
+
+    // ============ POST MANAGEMENT ============
+    function createPost(content) {
+        if (!currentUser) {
+            alert('पहले लॉगिन करें');
+            return false;
+        }
+
+        if (!content.trim()) {
+            alert('कुछ लिखें');
+            return false;
+        }
+
+        if (!isOnline) {
+            alert('ऑफलाइन हैं, बाद में कोशिश करें');
+            return false;
+        }
+
+        const newPost = {
+            id: generateUniqueId(),
+            userId: currentUser.id,
+            username: currentUser.username,
+            avatar: currentUser.avatar,
+            content: content.trim(),
+            image: null,
+            timestamp: new Date().toISOString(),
+            createdAt: new Date().toLocaleString('hi-IN')
+        };
+
+        allPosts.unshift(newPost);
+        saveData();
+        return true;
+    }
+
+    function deletePost(postId) {
+        if (confirm('पोस्ट हटा दें?')) {
+            const index = allPosts.findIndex(p => p.id === postId);
+            if (index > -1) {
+                allPosts.splice(index, 1);
+                delete allLikes[postId];
+                delete allComments[postId];
+                saveData();
+                renderFeed();
+            }
+        }
+    }
+
+    function toggleLike(postId) {
+        if (!currentUser) return;
+
+        if (!allLikes[postId]) allLikes[postId] = {};
+
+        if (allLikes[postId][currentUser.id]) {
+            delete allLikes[postId][currentUser.id];
+        } else {
+            allLikes[postId][currentUser.id] = true;
+        }
+
+        saveData();
+        renderFeed();
+    }
+
+    function addComment(postId, text) {
+        if (!currentUser || !text.trim()) return false;
+
+        if (!allComments[postId]) allComments[postId] = [];
+
+        allComments[postId].push({
+            id: generateUniqueId(),
+            userId: currentUser.id,
+            username: currentUser.username,
+            avatar: currentUser.avatar,
+            text: text.trim(),
+            timestamp: new Date().toISOString()
+        });
+
+        saveData();
+        return true;
+    }
+
+    // ============ PAGE RENDERING ============
+    function showPage(page) {
+        currentPage = page;
+
+        // Update nav
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        if (page === 'home') document.getElementById('navHome').classList.add('active');
+        if (page === 'profile') document.getElementById('navProfile').classList.add('active');
+        if (page === 'explore') document.getElementById('navExplore').classList.add('active');
+
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('open');
+        }
+
+        if (page === 'home') renderHome();
+        else if (page === 'profile') renderProfile();
+        else if (page === 'explore') renderExplore();
+    }
+
+    function renderHome() {
+        if (!currentUser) {
+            document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-title">लॉगिन करें</div></div>';
+            return;
+        }
+
+        if (!isOnline) {
+            document.getElementById('contentArea').innerHTML = `
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div class="card">
+                        <div style="text-align: center; color: #65676b;">
+                            <div style="font-size: 3rem;">📵</div>
+                            <div style="font-weight: 600; margin-top: 12px;">आप ऑफलाइन हैं</div>
+                            <div style="font-size: 0.9rem; margin-top: 8px;">नई पोस्ट नहीं दिख सकती</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <div style="max-width: 600px; margin: 0 auto;">
+                <!-- Create Post -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="avatar small">${currentUser.avatar}</div>
+                        <textarea id="postInput" placeholder="आप क्या सोच रहे हैं?" style="flex: 1; margin: 0; border: 1px solid #e5e7eb; border-radius: 20px;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button class="btn-secondary" onclick="document.getElementById('postInput').value = ''">रद्द करें</button>
+                        <button class="btn-primary" onclick="publishPost()" style="width: auto;">पोस्ट करें</button>
+                    </div>
+                </div>
+
+                <!-- Feed -->
+                <div id="feedContainer"></div>
+            </div>
+        `;
+
+        document.getElementById('contentArea').innerHTML = html;
+        renderFeed();
+    }
+
+    function renderFeed() {
+        const container = document.getElementById('feedContainer');
+        if (!container) return;
+
+        if (allPosts.length === 0) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">कोई पोस्ट नहीं</div><p>पहली पोस्ट करें या किसी को फॉलो करें</p></div>`;
+            return;
+        }
+
+        let html = '';
+
+        allPosts.forEach(post => {
+            const likeCount = allLikes[post.id] ? Object.keys(allLikes[post.id]).length : 0;
+            const isLiked = allLikes[post.id] && allLikes[post.id][currentUser.id];
+            const comments = allComments[post.id] || [];
+            const isOwner = post.userId === currentUser.id;
+
+            let commentsHtml = '';
+            if (comments.length > 0) {
+                commentsHtml = '<div class="comments-section">';
+                comments.slice(-3).forEach(comment => {
+                    commentsHtml += `
+                        <div class="comment">
+                            <div class="avatar small">${comment.avatar}</div>
+                            <div class="comment-content">
+                                <div class="comment-user" onclick="viewProfile('${comment.userId}')">${escapeHtml(comment.username)}</div>
+                                <div class="comment-text">${escapeHtml(comment.text)}</div>
+                                <div class="comment-time">${formatTime(comment.timestamp)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                commentsHtml += '</div>';
+            }
+
+            html += `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-user-info">
+                            <div class="avatar small" onclick="viewProfile('${post.userId}')" style="cursor: pointer;">${post.avatar}</div>
+                            <div>
+                                <div class="user-name" onclick="viewProfile('${post.userId}')">${escapeHtml(post.username)}</div>
+                                <div class="timestamp">${formatTime(post.timestamp)}</div>
+                            </div>
+                        </div>
+                        ${isOwner ? `<button class="btn-small" onclick="deletePost('${post.id}')">हटाएं</button>` : ''}
+                    </div>
+
+                    <div class="post-content">${escapeHtml(post.content)}</div>
+
+                    <div class="post-stats">
+                        <div>${likeCount} पसंद</div>
+                        <div>${comments.length} कमेंट्स</div>
+                    </div>
+
+                    <div class="post-actions">
+                        <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
+                            ${isLiked ? '❤️' : '🤍'} पसंद
+                        </button>
+                        <button class="action-btn" onclick="focusComment('${post.id}')">
+                            💬 कमेंट
+                        </button>
+                        <button class="action-btn" onclick="sharePost('${post.id}')">
+                            📤 शेयर
+                        </button>
+                    </div>
+
+                    ${commentsHtml}
+
+                    <div class="comment-input">
+                        <input type="text" id="comment-input-${post.id}" placeholder="कमेंट लिखें..." autocomplete="off">
+                        <button onclick="submitComment('${post.id}')" style="width: auto; padding: 8px 16px; margin: 0;">➤</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function renderProfile() {
+        if (!currentUser) {
+            document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-title">लॉगिन करें</div></div>';
+            return;
+        }
+
+        const userPosts = allPosts.filter(p => p.userId === currentUser.id);
+        const totalLikes = userPosts.reduce((sum, post) => sum + (allLikes[post.id] ? Object.keys(allLikes[post.id]).length : 0), 0);
+        const totalComments = userPosts.reduce((sum, post) => sum + (allComments[post.id] ? allComments[post.id].length : 0), 0);
+
+        let html = `
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div class="profile-header">
+                    <div class="profile-avatar">${currentUser.avatar}</div>
+                    <div class="profile-name">${escapeHtml(currentUser.username)}</div>
+                    <div class="profile-info">${escapeHtml(currentUser.phone)}</div>
+                    ${currentUser.email ? `<div class="profile-info">${escapeHtml(currentUser.email)}</div>` : ''}
+                    <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 12px;">सदस्य बने: ${currentUser.joinedAt}</div>
+
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <span class="stat-number">${userPosts.length}</span>
+                            <span class="stat-label">पोस्ट्स</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">${totalLikes}</span>
+                            <span class="stat-label">पसंद</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">${totalComments}</span>
+                            <span class="stat-label">कमेंट्स</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="btn-secondary" onclick="editProfile()">संपादित करें ✏️</button>
+                    <button class="btn-danger" onclick="logout()">लॉगआउट</button>
+                </div>
+
+                <div style="max-width: 600px; margin: 0 auto; padding: 16px;">
+                    <h2>मेरी पोस्ट्स</h2>
+                    ${userPosts.length === 0 ? `
+                        <div class="empty-state">
+                            <div class="empty-icon">📝</div>
+                            <div class="empty-title">कोई पोस्ट नहीं</div>
+                            <p>अपनी पहली पोस्ट साझा करें</p>
+                        </div>
+                    ` : `<div id="myPostsContainer"></div>`}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('contentArea').innerHTML = html;
+
+        if (userPosts.length > 0) {
+            let postsHtml = '';
+            userPosts.forEach(post => {
+                const likeCount = allLikes[post.id] ? Object.keys(allLikes[post.id]).length : 0;
+                const commentCount = allComments[post.id] ? allComments[post.id].length : 0;
+
+                postsHtml += `
+                    <div class="card" onclick="viewPost('${post.id}')" style="cursor: pointer;">
+                        <div class="post-content">${escapeHtml(post.content.slice(0, 100))}</div>
+                        <div class="post-stats" style="padding: 0; margin-top: 12px;">
+                            <div>❤️ ${likeCount}</div>
+                            <div>💬 ${commentCount}</div>
+                            <div style="margin-left: auto;">${formatTime(post.timestamp)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('myPostsContainer').innerHTML = postsHtml;
+        }
+    }
+
+    function renderExplore() {
+        if (!currentUser) {
+            document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-title">लॉगिन करें</div></div>';
+            return;
+        }
+
+        const allUsers = Array.from(new Set(allPosts.map(p => ({ userId: p.userId, username: p.username, avatar: p.avatar })), u => u.userId)).slice(0, 10);
+
+        let html = `
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div class="card">
+                    <h2>🔍 खोजें</h2>
+                    <input type="text" id="searchInput" placeholder="यूजरनेम खोजें...">
+                    <div id="searchResults"></div>
+                </div>
+
+                <div class="card">
+                    <h2>👥 लोकप्रिय यूजर्स</h2>
+                    <div id="usersContainer"></div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('contentArea').innerHTML = html;
+
+        let usersHtml = '';
+        allUsers.forEach(user => {
+            if (user.userId !== currentUser.id) {
+                const isFollowing = allFollows[currentUser.id] && allFollows[currentUser.id][user.userId];
+                usersHtml += `
+                    <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="viewProfile('${user.userId}')">
+                            <div class="avatar small">${user.avatar}</div>
+                            <div class="user-name">${escapeHtml(user.username)}</div>
+                        </div>
+                        <button class="btn-small" onclick="toggleFollow('${user.userId}')">${isFollowing ? 'अनफॉलो' : 'फॉलो'}</button>
+                    </div>
+                `;
+            }
+        });
+
+        document.getElementById('usersContainer').innerHTML = usersHtml || '<p style="color: #65676b;">कोई यूजर नहीं मिले</p>';
+
+        document.getElementById('searchInput').addEventListener('keyup', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allUsers.filter(u => u.username.toLowerCase().includes(query) && u.userId !== currentUser.id);
+
+            let searchHtml = '';
+            filtered.forEach(user => {
+                const isFollowing = allFollows[currentUser.id] && allFollows[currentUser.id][user.userId];
+                searchHtml += `
+                    <div style="padding: 8px 0; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="user-name" onclick="viewProfile('${user.userId}')" style="cursor: pointer;">${escapeHtml(user.username)}</div>
+                        <button class="btn-small" onclick="toggleFollow('${user.userId}')">${isFollowing ? 'अनफॉलो' : 'फॉलो'}</button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('searchResults').innerHTML = query ? (searchHtml || '<p style="color: #65676b;">कोई परिणाम नहीं</p>') : '';
+        });
+    }
+
+    function viewProfile(userId) {
+        const user = allPosts.find(p => p.userId === userId);
+        if (!user) return;
+
+        const userPosts = allPosts.filter(p => p.userId === userId);
+        const totalLikes = userPosts.reduce((sum, post) => sum + (allLikes[post.id] ? Object.keys(allLikes[post.id]).length : 0), 0);
+        const isFollowing = allFollows[currentUser.id] && allFollows[currentUser.id][userId];
+
+        let html = `
+            <div class="profile-header">
+                <div class="profile-avatar">${user.avatar}</div>
+                <div class="profile-name">${escapeHtml(user.username)}</div>
+                <div class="profile-stats">
+                    <div class="stat">
+                        <span class="stat-number">${userPosts.length}</span>
+                        <span class="stat-label">पोस्ट्स</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">${totalLikes}</span>
+                        <span class="stat-label">पसंद</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <button class="btn-primary" onclick="toggleFollow('${userId}')" style="flex: 1;">${isFollowing ? '✓ अनफॉलो किया' : '+ फॉलो करें'}</button>
+            </div>
+
+            <div style="max-width: 500px; padding: 16px;">
+                <h3>पोस्ट्स</h3>
+                <div id="userPostsContainer"></div>
+            </div>
+        `;
+
+        document.getElementById('modalProfileContent').innerHTML = html;
+        document.getElementById('profileModal').classList.add('show');
+
+        let postsHtml = '';
+        userPosts.forEach(post => {
+            const likeCount = allLikes[post.id] ? Object.keys(allLikes[post.id]).length : 0;
+            const commentCount = allComments[post.id] ? allComments[post.id].length : 0;
+
+            postsHtml += `
+                <div class="card" style="cursor: pointer; margin-bottom: 12px;">
+                    <div class="post-content">${escapeHtml(post.content.slice(0, 100))}</div>
+                    <div class="post-stats" style="padding: 0; margin-top: 12px;">
+                        <div>❤️ ${likeCount}</div>
+                        <div>💬 ${commentCount}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        document.getElementById('userPostsContainer').innerHTML = postsHtml || '<p style="color: #65676b;">कोई पोस्ट नहीं</p>';
+    }
+
+    function toggleFollow(userId) {
+        if (!allFollows[currentUser.id]) {
+            allFollows[currentUser.id] = {};
+        }
+
+        if (allFollows[currentUser.id][userId]) {
+            delete allFollows[currentUser.id][userId];
+        } else {
+            allFollows[currentUser.id][userId] = true;
+        }
+
+        saveData();
+        renderExplore();
+    }
+
+    // ============ HELPER FUNCTIONS ============
+    function publishPost() {
+        const input = document.getElementById('postInput');
+        const content = input.value;
+
+        if (createPost(content)) {
+            input.value = '';
+            renderFeed();
+        }
+    }
+
+    function submitComment(postId) {
+        const input = document.getElementById(`comment-input-${postId}`);
+        const text = input.value;
+
+        if (addComment(postId, text)) {
+            input.value = '';
+            renderFeed();
+        }
+    }
+
+    function focusComment(postId) {
+        const input = document.getElementById(`comment-input-${postId}`);
+        if (input) input.focus();
+    }
+
+    function sharePost(postId) {
+        alert('शेयर फीचर जल्द आ रहा है!');
+    }
+
+    function viewPost(postId) {
+        alert('विस्तृत दृश्य जल्द आ रहा है!');
+    }
+
+    function editProfile() {
+        const bio = prompt('बायो दर्ज करें:', currentUser.bio || '');
+        if (bio !== null) {
+            currentUser.bio = bio;
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser));
+            renderProfile();
+        }
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('show');
+    }
+
+    // ============ EVENT LISTENERS ============
+    window.addEventListener('online', () => {
+        isOnline = true;
+        updateUI();
+        if (currentPage === 'home') renderHome();
+    });
+
+    window.addEventListener('offline', () => {
+        isOnline = false;
+        updateUI();
+        if (currentPage === 'home') renderHome();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        updateUI();
+        showPage('home');
+
+        // Mobile menu toggle
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+            }
+        });
+    });
+
+    // Close modal on backdrop click
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.classList.remove('show');
+        }
+    });
+</script>
+
+</body>
+</html>
